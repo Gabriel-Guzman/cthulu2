@@ -1,0 +1,7 @@
+node_modules/
+logs
+*.log
+.idea/
+*/.idea/*
+*.env
+deploy.sh
