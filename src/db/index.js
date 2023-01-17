@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
 import Memory from "../memory/index.js";
-mongoose.connect(
-  process.env.MONGODB_URI,
-).then(() => { console.info("connected to MongoDB"); });
+
+export default function() {
+ return mongoose.connect(
+    process.env.MONGODB_URI,
+  ).then(() => { console.info("connected to MongoDB"); });
+}
 
 const youtubeStatsSchema = new mongoose.Schema(
   {

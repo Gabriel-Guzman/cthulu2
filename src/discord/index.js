@@ -4,8 +4,13 @@ import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v10";
 import { InteractionType } from "discord-api-types/v10";
 import createClient from "./client/index.js";
+import db, { cachedFindOne, GuildUserInfo, ServerInfo } from "../db/index.js";
+import { incrementUserXp, xpGainCommand, xpGainEvent } from "../levels/index.js";
 
 export default async function scoMom() {
+  // connect to database
+  await db();
+
   // create the logged in discord client instance
   const client = createClient();
 
@@ -28,6 +33,20 @@ function storeCommands(client, commands) {
 }
 
 function registerEvents(client) {
+  client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+    if (message.channel.type === "DM") return;
+    try {
+      if (!process.env.STAGING) {
+        const userInfo = await cachedFindOne(GuildUserInfo, { userId: message.author.id, guildId: message.channel.guild.id });
+        await incrementUserXp(userInfo, message.author, message.channel, xpGainEvent['messageCreate'])
+      }
+    } catch(e) {
+      console.error(e);
+    }
+
+  })
+
   client.on('interactionCreate', async (interaction) => {
 
     if (interaction.user.bot) return;
@@ -35,7 +54,21 @@ function registerEvents(client) {
 
     if (!command) return interaction.reply({ content: 'This command is unavailable. *Check back later.*', ephemeral: true }) && client.commands.delete(interaction.commandName);
     try {
-        await command.run(client, interaction);
+
+
+      // increment user xp
+      const userInfo = await cachedFindOne(GuildUserInfo, { userId: interaction.member.id, guildId: interaction.guild.id });
+      if (command.xpGain) {
+        await incrementUserXp(userInfo, interaction.member, interaction.channel, command.xpGain);
+      }
+      await command.run(client, interaction);
+
+      // warn the user if this is an inappropriate channel
+      const serverInfo = await cachedFindOne(ServerInfo, { guildId: interaction.guild.id });
+      console.log(serverInfo)
+      if (serverInfo.botReservedTextChannels && serverInfo.botReservedTextChannels.length && !serverInfo.botReservedTextChannels.includes(interaction.channel.id)) {
+        await interaction.followUp({ content: `By the way we use these channels for bot commands: ${serverInfo.botReservedTextChannels.map(c => `<#${c}>`).join(" ")}`, ephemeral: true })
+      }
     }
     catch (e) {
       console.log(e);

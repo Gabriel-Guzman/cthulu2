@@ -29,12 +29,11 @@ export default {
 
       let textChannel;
       const serverInfo = await cachedFindOne(ServerInfo, { guildId: interaction.guild.id });
-      if (serverInfo.globallyAllowedBots && serverInfo.globallyAllowedBots.length) {
-        textChannel = await interaction.guild.channels.fetch(serverInfo.globallyAllowedBots[0]);
+      if (serverInfo.botReservedTextChannels && serverInfo.botReservedTextChannels.length) {
+        textChannel = await interaction.guild.channels.fetch(serverInfo.botReservedTextChannels[0]);
       }
 
       await AQM.queue(voiceChannel, textChannel, payload);
-
 
       const userInfo = await cachedFindOne(GuildUserInfo, { userId: interaction.member.id, guildId: interaction.guild.id });
       return interaction.reply(
@@ -48,7 +47,6 @@ export default {
 
       return interaction.reply({ content: "error queueing song: " + e.message, ephemeral: true });
     }
-
 
   }
 }
