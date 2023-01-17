@@ -10,9 +10,12 @@ export default {
     .setDescription("Stop the music.. you sure?"),
   async run(client, interaction) {
     AQM.stop(interaction.guild.id);
-    const userInfo = await cachedFindOne(GuildUserInfo, { userId: interaction.member.id, guildId: interaction.guild.id });
+    const userInfo = await cachedFindOne(GuildUserInfo, {
+      userId: interaction.member.id,
+      guildId: interaction.guild.id,
+    });
     return interaction.reply(
       getAffirmativeDialog("stop", interaction.member, userInfo)
     );
-  }
-}
+  },
+};

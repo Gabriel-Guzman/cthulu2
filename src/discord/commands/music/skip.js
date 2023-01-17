@@ -10,9 +10,12 @@ export default {
     .setDescription("Skip the current song"),
   async run(client, interaction) {
     AQM.skip(interaction.guild.id);
-    const userInfo = await cachedFindOne(GuildUserInfo, { userId: interaction.member.id, guildId: interaction.guild.id });
+    const userInfo = await cachedFindOne(GuildUserInfo, {
+      userId: interaction.member.id,
+      guildId: interaction.guild.id,
+    });
     return interaction.reply(
       getAffirmativeDialog("skip", interaction.member, userInfo)
     );
-  }
-}
+  },
+};

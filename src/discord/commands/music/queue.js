@@ -1,6 +1,11 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { parse } from "spotify-uri";
-import { AQM, Search, YouTubeAudio, UnsearchedYoutubePayload} from "../../../audio/index.js";
+import {
+  AQM,
+  Search,
+  YouTubeAudio,
+  UnsearchedYoutubePayload,
+} from "../../../audio/index.js";
 import { getAffirmativeDialog } from "../../dialog/index.js";
 import Spotify, { confirmCredentials } from "../../spotify/index.js";
 import { cachedFindOne, GuildUserInfo, ServerInfo } from "../../../db/index.js";
@@ -11,45 +16,62 @@ export default {
     .setName("queue")
     .setDescription("Add a song to the music queue")
     .setDMPermission(false)
-    .addStringOption(opt =>
-      opt.setRequired(true)
+    .addStringOption((opt) =>
+      opt
+        .setRequired(true)
         .setName("query")
-        .setDescription("Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'")
+        .setDescription(
+          "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'"
+        )
     ),
   async run(client, interaction) {
     const query = interaction.options.getString("query");
     const voiceChannel = interaction.member.voice.channel;
 
     if (!voiceChannel) {
-      return interaction.reply({ content: "Must be in a voice channel to play music", ephemeral: true});
+      return interaction.reply({
+        content: "Must be in a voice channel to play music",
+        ephemeral: true,
+      });
     }
 
     try {
-      const payload = await buildPayload(query)
+      const payload = await buildPayload(query);
 
       let textChannel;
-      const serverInfo = await cachedFindOne(ServerInfo, { guildId: interaction.guild.id });
-      if (serverInfo.botReservedTextChannels && serverInfo.botReservedTextChannels.length) {
-        textChannel = await interaction.guild.channels.fetch(serverInfo.botReservedTextChannels[0]);
+      const serverInfo = await cachedFindOne(ServerInfo, {
+        guildId: interaction.guild.id,
+      });
+      if (
+        serverInfo.botReservedTextChannels &&
+        serverInfo.botReservedTextChannels.length
+      ) {
+        textChannel = await interaction.guild.channels.fetch(
+          serverInfo.botReservedTextChannels[0]
+        );
       }
 
       await AQM.queue(voiceChannel, textChannel, payload);
 
-      const userInfo = await cachedFindOne(GuildUserInfo, { userId: interaction.member.id, guildId: interaction.guild.id });
+      const userInfo = await cachedFindOne(GuildUserInfo, {
+        userId: interaction.member.id,
+        guildId: interaction.guild.id,
+      });
       return interaction.reply(
         getAffirmativeDialog("queue", interaction.member, userInfo)
       );
-    }
-    catch (e) {
+    } catch (e) {
       if (e.body && e.body.error && e.body.error.status === 404) {
         return interaction.reply({ content: "not found :(", ephemeral: true });
       }
 
-      return interaction.reply({ content: "error queueing song: " + e.message, ephemeral: true });
+      return interaction.reply({
+        content: "error queueing song: " + e.message,
+        ephemeral: true,
+      });
     }
-
-  }
-}
+  },
+};
 
 async function buildPayload(query) {
   const firstWord = query.trim().split(" ")[0];
@@ -92,16 +114,12 @@ async function buildPayload(query) {
 
         const album = albumResp.body;
         const albumQueries = album.items.map(
-          (item) =>
-            item.name + " " + item.artists.map((a) => a.name).join(" ")
+          (item) => item.name + " " + item.artists.map((a) => a.name).join(" ")
         );
         return albumQueries.map((q) => new UnsearchedYoutubePayload(q));
       default:
-        throw new Error(
-          "i don't support " + parsed.type + " links :("
-        );
+        throw new Error("i don't support " + parsed.type + " links :(");
     }
-
   }
 
   if (!ytPayload) {
@@ -111,7 +129,6 @@ async function buildPayload(query) {
         throw new Error("i couldn't find that on youtube :(");
       }
       return new YouTubeAudio(result[0].link, result[0].title);
-
     } else {
       const songInfo = await ytdl.getInfo(
         firstWord.replace("https://", "http://")
@@ -122,7 +139,6 @@ async function buildPayload(query) {
       );
     }
   }
-
 }
 
 function parseSpotifyUri(uri) {

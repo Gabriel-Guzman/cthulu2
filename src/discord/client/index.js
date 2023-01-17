@@ -20,7 +20,9 @@ export default function createClient() {
 
   // login to Discord
 
-  client.login(process.env.DISCORD_API_TOKEN).then((p) => console.log("Logged into Discord"));
+  client
+    .login(process.env.DISCORD_API_TOKEN)
+    .then((p) => console.log("Logged into Discord"));
 
   client.commands = new Collection();
 

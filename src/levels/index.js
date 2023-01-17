@@ -1,4 +1,3 @@
-
 export const xpLevelIncrease = Math.pow(2, 1 / 7);
 const initalXp = 83;
 
@@ -15,14 +14,19 @@ export function calculateLevel(xp) {
 
 export const xpGainCommand = {
   queue: 10,
-}
+};
 
 export const xpGainEvent = {
   messageCreate: 5,
-}
+};
 
 // increments a users level in the db
-export async function incrementUserXp(userInfo, member, channel, amountToAdjust) {
+export async function incrementUserXp(
+  userInfo,
+  member,
+  channel,
+  amountToAdjust
+) {
   console.log("incrementUserLevel called");
 
   userInfo.xp = userInfo.xp + amountToAdjust;

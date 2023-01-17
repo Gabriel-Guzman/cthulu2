@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 import Memory from "../memory/index.js";
 
-export default function() {
- return mongoose.connect(
-    process.env.MONGODB_URI,
-  ).then(() => { console.info("connected to MongoDB"); });
+export default function () {
+  return mongoose.connect(process.env.MONGODB_URI).then(() => {
+    console.info("connected to MongoDB");
+  });
 }
 
 const youtubeStatsSchema = new mongoose.Schema(
@@ -76,8 +76,11 @@ const Job = mongoose.model("Job", jobSchema);
 const GuildUserInfo = mongoose.model("GuildUserInfo", guildUserInfoSchema);
 
 const keyGens = new Map();
-keyGens.set(GuildUserInfo, ({userId, guildId}) => `guild_user_info_${userId}_${guildId}`)
-keyGens.set(ServerInfo, ({guildId}) => `server_info_${guildId}`);
+keyGens.set(
+  GuildUserInfo,
+  ({ userId, guildId }) => `guild_user_info_${userId}_${guildId}`
+);
+keyGens.set(ServerInfo, ({ guildId }) => `server_info_${guildId}`);
 
 async function cachedFindOne(model, opts, upsert = false) {
   const gen = keyGens.get(model);
@@ -111,4 +114,11 @@ function removeFromCache(model, opts) {
   return Memory.delete(gen(model, opts));
 }
 
-export { YoutubeStats, Profanity, ServerInfo, Job, GuildUserInfo, cachedFindOne };
+export {
+  YoutubeStats,
+  Profanity,
+  ServerInfo,
+  Job,
+  GuildUserInfo,
+  cachedFindOne,
+};
