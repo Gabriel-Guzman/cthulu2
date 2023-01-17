@@ -13,12 +13,6 @@
     "node": "16.9.0"
   },
   "type": "module",
-  "workspaces": [
-    "packages/discord_services/mommabot",
-    "packages/rcon",
-    "packages/soulseek",
-    "packages/youtube"
-  ],
   "scripts": {
     "start": "NODE_PATH=packages/ nodemon index.js",
     "dev": "DEV=true NODE_PATH=src/  nodemon index.js",
@@ -33,13 +27,11 @@
     "@discordjs/voice": "^0.7.5",
     "axios": "^0.27.2",
     "body-parser": "^1.20.0",
-    "cron": "^2.1.0",
     "discord-api-types": "^0.37.28",
     "discord.js": "^13.9.2",
     "dotenv": "^16.0.3",
     "express": "^4.17.1",
     "ffmpeg-static": "^4.4.1",
-    "helmet": "^6.0.0",
     "libsodium-wrappers": "^0.7.10",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
@@ -47,10 +39,8 @@
     "multer": "^1.4.5-lts.1",
     "pm2": "^5.1.2",
     "profanity-util": "^0.2.0",
-    "rcon-client": "^4.2.3",
     "spotify-uri": "^3.0.3",
     "spotify-web-api-node": "^5.0.2",
-    "winston": "^3.3.3",
     "youtube-search": "^1.1.6",
     "ytdl-core": "^4.10.0"
   }
