@@ -1,9 +1,17 @@
 // require the discord.js module
 import Discord, { Collection } from "discord.js";
 
-export default function createClient() {
+class ExtendedClient extends Discord.Client {
+  constructor(opts) {
+    super(opts);
+    this.commands = new Collection();
+  }
+  commands: Collection<string, any>;
+}
+
+export default function createClient(): ExtendedClient {
   // create a new Discord client
-  const client = new Discord.Client({
+  const client = new ExtendedClient({
     http: { api: "https://discord.com/api" },
     intents: [
       Discord.Intents.FLAGS.GUILDS,
@@ -23,8 +31,6 @@ export default function createClient() {
   client
     .login(process.env.DISCORD_API_TOKEN)
     .then((p) => console.log("Logged into Discord"));
-
-  client.commands = new Collection();
 
   return client;
 }

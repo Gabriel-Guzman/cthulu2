@@ -9,6 +9,7 @@ import {
 import { getAffirmativeDialog } from "../../dialog/index.js";
 import Spotify, { confirmCredentials } from "../../spotify/index.js";
 import { cachedFindOne, GuildUserInfo, ServerInfo } from "../../../db/index.js";
+import ytdl from "ytdl-core";
 
 export default {
   name: "queue",

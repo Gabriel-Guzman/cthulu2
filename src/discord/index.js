@@ -1,15 +1,9 @@
-import client from "./client/index.js";
 import { readdirSync } from "fs";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v10";
-import { InteractionType } from "discord-api-types/v10";
-import createClient from "./client/index.js";
+import createClient from "./client/index";
 import db, { cachedFindOne, GuildUserInfo, ServerInfo } from "../db/index.js";
-import {
-  incrementUserXp,
-  xpGainCommand,
-  xpGainEvent,
-} from "../levels/index.js";
+import { incrementUserXp, xpGainEvent } from "../levels/index.js";
 
 export default async function scoMom() {
   // connect to database
