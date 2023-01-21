@@ -12,6 +12,14 @@ export default async function scoMom() {
     // create the logged in discord client instance
     const client = createClient();
     await client.login(process.env.DISCORD_API_TOKEN);
+    console.log(
+        "logged in as " +
+            client.application.name +
+            "," +
+            client.user.username +
+            "," +
+            client.application.description
+    );
 
     // import all our slash commands and store them in client
     const commands = await buildCommandData();
