@@ -42,7 +42,8 @@ async function handleCommands(
     try {
         await command.run(ctx.client, interaction);
     } catch (e) {
-        await interaction.reply({
+        console.error(e);
+        await interaction.channel.send({
             content: `An error has occurred.\n\n**\`${e.message}\`**`,
         });
         return;

@@ -11,7 +11,7 @@ export default async function scoMom() {
 
     // create the logged in discord client instance
     const client = createClient();
-    await client.login();
+    await client.login(process.env.DISCORD_API_TOKEN);
 
     // import all our slash commands and store them in client
     const commands = await buildCommandData();
@@ -49,9 +49,7 @@ export async function buildCommandData() {
         ).filter(
             (cmd) =>
                 // @ts-ignore
-                console.log(absoluteCommandsPath, cmd) ||
-                cmd.endsWith(".ts") ||
-                cmd.endsWith(".js")
+                cmd.endsWith(".ts") || cmd.endsWith(".js")
         );
 
         for await (const command of commands) {

@@ -56,6 +56,7 @@ export default {
             return interaction.reply("i don't think that's a valid link...");
         }
         serverInfo.intros.set(interaction.member.id, url);
+        await serverInfo.save();
         const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
             userId: interaction.member.id,
             guildId: interaction.guild.id,
