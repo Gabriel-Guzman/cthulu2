@@ -15,7 +15,7 @@
         "node": "16.9.0"
     },
     "scripts": {
-        "prod": "./node_modules/.bin/tsc && pm2 start ./dist/index.js",
+        "prod": "./node_modules/.bin/tsc && pm2 restart ./dist/index.js",
         "dev": "DEV=true NODE_PATH=src/  nodemon",
         "pretty-quick": "pretty-quick --staged",
         "prettier": "prettier ./ -w",
