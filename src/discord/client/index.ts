@@ -1,7 +1,7 @@
 // require the discord.js module
-import Discord, { Collection } from "discord.js";
+import { Client, Collection, Intents } from "discord.js";
 
-class ExtendedClient extends Discord.Client {
+class ExtendedClient extends Client {
     constructor(opts) {
         super(opts);
         this.commands = new Collection();
@@ -16,12 +16,12 @@ export default function createClient(): ExtendedClient {
     const client = new ExtendedClient({
         http: { api: "https://discord.com/api" },
         intents: [
-            Discord.Intents.FLAGS.GUILDS,
-            Discord.Intents.FLAGS.GUILD_MESSAGES,
-            Discord.Intents.FLAGS.DIRECT_MESSAGES,
-            Discord.Intents.FLAGS.GUILD_MEMBERS,
-            Discord.Intents.FLAGS.GUILD_VOICE_STATES,
-            Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+            Intents.FLAGS.GUILDS,
+            Intents.FLAGS.GUILD_MESSAGES,
+            Intents.FLAGS.DIRECT_MESSAGES,
+            Intents.FLAGS.GUILD_MEMBERS,
+            Intents.FLAGS.GUILD_VOICE_STATES,
+            Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
         ],
         partials: ["MESSAGE", "REACTION", "CHANNEL"],
     });

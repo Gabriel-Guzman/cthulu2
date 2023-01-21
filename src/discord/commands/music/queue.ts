@@ -9,6 +9,7 @@ import {
 import { getAffirmativeDialog } from "../../dialog";
 import Spotify, { confirmCredentials } from "../../spotify/index.js";
 import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
+// @ts-ignore
 import ytdl from "ytdl-core";
 import { IAudioPayload } from "../../../audio/core/aqm";
 

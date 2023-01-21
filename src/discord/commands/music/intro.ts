@@ -2,6 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { AQM } from "../../../audio";
 import { getAffirmativeDialog } from "../../dialog";
 import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
+// @ts-ignore
 import ytdl from "ytdl-core";
 
 function isValidHttpUrl(string): boolean {
