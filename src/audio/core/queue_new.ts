@@ -84,7 +84,6 @@ class DiscordQCM extends QueueConsumerManager<GuildQueueConsumer> {
   queue(id: string, payload: DiscordAudioPayload) {
     const consumer = this.queueConsumers.get(id);
     if (consumer) {
-      consumer.
     }
   }
 }
