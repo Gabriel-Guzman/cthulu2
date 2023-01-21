@@ -1,8 +1,8 @@
 import {
-  AQM as aqm,
-  YoutubePayload,
-  FilePayload,
-  UnsearchedYoutubePayload,
+    AQM as aqm,
+    YoutubePayload,
+    FilePayload,
+    UnsearchedYoutubePayload,
 } from "./core/Queue.js";
 import search from "./core/Search.js";
 
