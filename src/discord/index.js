@@ -39,14 +39,20 @@ function registerEvents(client) {
 export async function buildCommandData() {
     const commandData = [];
 
-    const absoluteCommandsPath = process.env.DEV
-        ? "./src/discord/commands"
-        : "./dist/src/discord/commands";
+    const absoluteCommandsPath = process.env.NODE_DEV
+        ? process.env.PWD + "/src/discord/commands"
+        : process.env.PWD + "/dist/src/discord/commands";
 
     const promises = readdirSync(absoluteCommandsPath).map(async (category) => {
         const commands = readdirSync(
             `${absoluteCommandsPath}/${category}/`
-        ).filter((cmd) => cmd.endsWith(".ts") || cmd.endsWith(".js"));
+        ).filter(
+            (cmd) =>
+                // @ts-ignore
+                console.log(absoluteCommandsPath, cmd) ||
+                cmd.endsWith(".ts") ||
+                cmd.endsWith(".js")
+        );
 
         for await (const command of commands) {
             const Command = await import(`./commands/${category}/${command}`);
