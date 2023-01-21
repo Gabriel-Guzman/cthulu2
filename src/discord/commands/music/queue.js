@@ -5,10 +5,10 @@ import {
   Search,
   YouTubeAudio,
   UnsearchedYoutubePayload,
-} from "../../../audio/index.js";
-import { getAffirmativeDialog } from "../../dialog/index.js";
+} from "../../../audio";
+import { getAffirmativeDialog } from "../../dialog";
 import Spotify, { confirmCredentials } from "../../spotify/index.js";
-import { cachedFindOne, GuildUserInfo, ServerInfo } from "../../../db/index.js";
+import { cachedFindOne, GuildUserInfo, ServerInfo } from "../../../db";
 import ytdl from "ytdl-core";
 
 export default {

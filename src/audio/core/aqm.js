@@ -13,22 +13,27 @@ import {
 
 import Search from "./Search.js";
 
-export class YoutubePayload {
+class AudioPayload {}
+
+export class YoutubePayload extends AudioPayload {
   constructor(link, title) {
+    super();
     this.link = link;
     this.title = title;
   }
 }
 
-export class FilePayload {
+export class FilePayload extends AudioPayload {
   constructor(path, volume) {
+    super();
     this.path = path;
     this.volume = volume;
   }
 }
 
-export class UnsearchedYoutubePayload {
+export class UnsearchedYoutubePayload extends AudioPayload {
   constructor(query) {
+    super();
     this.query = query;
   }
 }
@@ -162,6 +167,26 @@ class AudioQueueManager {
     }
   }
 
+  getQueue(guildId) {
+    const gq = this.queues.get(guildId);
+    if (gq) {
+      const payloads = gq.payloads;
+      const ret = payloads.map((payload) => {
+        if (payload instanceof YoutubePayload) {
+          return payload.title;
+        } else if (payload instanceof UnsearchedYoutubePayload) {
+          return payload.query;
+        } else if (payload instanceof FilePayload) {
+          return payload.path.split("/").reverse().pop();
+        }
+      });
+
+      return ret;
+    }
+
+    return [];
+  }
+
   skip(guildId) {
     const gq = this.queues.get(guildId);
     if (gq) {
@@ -209,7 +234,7 @@ class AudioQueueManager {
 
   async queue(channel, textChannel, payload, locked = false) {
     const gq = this.queues.get(channel.guild.id);
-    console.log(gq, payload)
+    console.log(gq, payload);
     if (!gq) {
       const player = createAudioPlayer({});
       player.on("error", (error) => {
