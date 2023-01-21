@@ -41,7 +41,7 @@ async function buildCtx(reaction: MessageReaction, user: User) {
     }
     return {
         guildUserInfo: await cachedFindOneOrUpsert(GuildUserInfo, {
-            userId: reaction.message.author.id,
+            userId: (await reaction.message.guild.members.fetch(user)).id,
             guildId: reaction.message.channel.guild.id,
         }),
         serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
@@ -57,6 +57,9 @@ export default async function handleMessageReactionAdd(
     user: User
 ): Promise<void> {
     if (user.bot) return;
+    if (reaction.me) return;
+    if (!reaction.message.guild) return;
+
     const ctx = await buildCtx(reaction, user);
     await Promise.all([acceptRules(ctx, reaction, user)]);
 }
