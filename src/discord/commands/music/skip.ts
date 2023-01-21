@@ -1,21 +1,22 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { AQM } from "../../../audio/index.js";
 import { getAffirmativeDialog } from "../../dialog/index.js";
-import { cachedFindOne, GuildUserInfo } from "../../../db/index.js";
+import { cachedFindOneOrUpsert, GuildUserInfo } from "../../../db";
 
 export default {
-    name: "stop",
+    name: "skip",
     builder: new SlashCommandBuilder()
-        .setName("stop")
-        .setDescription("Stop the music.. you sure?"),
+        .setName("skip")
+        .setDescription("Skip the current song")
+        .setDMPermission(false),
     async run(client, interaction) {
-        AQM.stop(interaction.guild.id);
-        const userInfo = await cachedFindOne(GuildUserInfo, {
+        AQM.skip(interaction.guild.id);
+        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
             userId: interaction.member.id,
             guildId: interaction.guild.id,
         });
         return interaction.reply(
-            getAffirmativeDialog("stop", interaction.member, userInfo)
+            getAffirmativeDialog("skip", interaction.member, userInfo)
         );
     },
 };

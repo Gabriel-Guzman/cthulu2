@@ -9,13 +9,20 @@ import {
     VoiceConnectionStatus,
     entersState,
     AudioPlayerStatus,
+    AudioPlayer,
+    PlayerSubscription,
 } from "@discordjs/voice";
 
 import Search from "./Search.js";
+import { TextBasedChannel } from "discord.js";
 
 class AudioPayload {}
 
+export interface IAudioPayload extends AudioPayload {}
+
 export class YoutubePayload extends AudioPayload {
+    link: string;
+    title: string;
     constructor(link, title) {
         super();
         this.link = link;
@@ -24,6 +31,8 @@ export class YoutubePayload extends AudioPayload {
 }
 
 export class FilePayload extends AudioPayload {
+    path: string;
+    volume: number;
     constructor(path, volume) {
         super();
         this.path = path;
@@ -32,6 +41,7 @@ export class FilePayload extends AudioPayload {
 }
 
 export class UnsearchedYoutubePayload extends AudioPayload {
+    query: string;
     constructor(query) {
         super();
         this.query = query;
@@ -39,6 +49,12 @@ export class UnsearchedYoutubePayload extends AudioPayload {
 }
 
 class GuildQueue {
+    payloads: Array<AudioPayload>;
+    player: AudioPlayer;
+    textChannel: TextBasedChannel;
+    subscription: PlayerSubscription;
+    locked: boolean;
+
     constructor(player, payload, textChannel, subscription, locked = false) {
         this.player = player;
         if (Array.isArray(payload)) {
@@ -51,7 +67,7 @@ class GuildQueue {
         this.locked = locked;
     }
 
-    shiftQueue() {
+    shiftQueue(): AudioPayload {
         return this.payloads.shift();
     }
 
@@ -61,9 +77,9 @@ class GuildQueue {
 }
 
 class AudioQueueManager {
-    queues = new Map();
+    queues = new Map<string, GuildQueue>();
 
-    async joinAndSubscribe(channel, player) {
+    async joinAndSubscribe(channel, player): Promise<PlayerSubscription> {
         let connection;
         connection = getVoiceConnection(channel.guild.id);
 
@@ -80,12 +96,14 @@ class AudioQueueManager {
             });
 
             const winner = await Promise.race([
-                new Promise((res, rej) => {
+                new Promise<PlayerSubscription>((res) => {
                     connection.on(VoiceConnectionStatus.Ready, () => {
                         res(connection.subscribe(player));
                     });
                 }),
-                new Promise((res, rej) => setTimeout(() => res(false), 5000)),
+                new Promise<boolean>((res) =>
+                    setTimeout(() => res(false), 5000)
+                ),
             ]);
 
             const subscription = winner;
@@ -93,31 +111,28 @@ class AudioQueueManager {
                 throw new Error("timed out waiting for voice connection");
             }
 
-            connection.on(
-                VoiceConnectionStatus.Disconnected,
-                async (oldState, newState) => {
-                    try {
-                        await Promise.race([
-                            entersState(
-                                connection,
-                                VoiceConnectionStatus.Signalling,
-                                5_000
-                            ),
-                            entersState(
-                                connection,
-                                VoiceConnectionStatus.Connecting,
-                                5_000
-                            ),
-                        ]);
-                        // Seems to be reconnecting to a new channel - ignore disconnect
-                    } catch (error) {
-                        // Seems to be a real disconnect which SHOULDN'T be recovered from
-                        this.end(channel.guild.id);
-                    }
+            connection.on(VoiceConnectionStatus.Disconnected, async () => {
+                try {
+                    await Promise.race([
+                        entersState(
+                            connection,
+                            VoiceConnectionStatus.Signalling,
+                            5_000
+                        ),
+                        entersState(
+                            connection,
+                            VoiceConnectionStatus.Connecting,
+                            5_000
+                        ),
+                    ]);
+                    // Seems to be reconnecting to a new channel - ignore disconnect
+                } catch (error) {
+                    // Seems to be a real disconnect which SHOULDN'T be recovered from
+                    this.end(channel.guild.id);
                 }
-            );
+            });
 
-            return subscription;
+            return subscription as PlayerSubscription;
         }
 
         return connection.subscribe(player);
@@ -131,7 +146,7 @@ class AudioQueueManager {
         }
     }
 
-    async next(guildId) {
+    async next(guildId): Promise<void> {
         const gq = this.queues.get(guildId);
 
         if (!gq) {
@@ -147,13 +162,13 @@ class AudioQueueManager {
         }
     }
 
-    end(guildId) {
+    end(guildId): void {
         const connection = getVoiceConnection(guildId);
         if (connection) connection.destroy();
         this._delete(guildId);
     }
 
-    stop(guildId) {
+    stop(guildId): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.payloads = [];
@@ -161,14 +176,14 @@ class AudioQueueManager {
         }
     }
 
-    pause(guildId) {
+    pause(guildId): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.player.pause();
         }
     }
 
-    resume(guildId) {
+    resume(guildId): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.player.unpause();

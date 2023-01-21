@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { parse } from "spotify-uri";
+import { Album, parse, ParsedSpotifyUri, Playlist, Track } from "spotify-uri";
 import {
     AQM,
     Search,
@@ -8,13 +8,9 @@ import {
 } from "../../../audio";
 import { getAffirmativeDialog } from "../../dialog";
 import Spotify, { confirmCredentials } from "../../spotify/index.js";
-import {
-    cachedFindOne,
-    cachedFindOneOrUpsert,
-    GuildUserInfo,
-    ServerInfo,
-} from "../../../db";
+import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
 import ytdl from "ytdl-core";
+import { IAudioPayload } from "../../../audio/core/aqm";
 
 export default {
     name: "queue",
@@ -59,7 +55,7 @@ export default {
 
             await AQM.queue(voiceChannel, textChannel, payload);
 
-            const userInfo = await cachedFindOne(GuildUserInfo, {
+            const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
                 userId: interaction.member.id,
                 guildId: interaction.guild.id,
             });
@@ -67,6 +63,7 @@ export default {
                 getAffirmativeDialog("queue", interaction.member, userInfo)
             );
         } catch (e) {
+            console.error(e);
             if (e.body && e.body.error && e.body.error.status === 404) {
                 return interaction.reply({
                     content: "not found :(",
@@ -82,7 +79,7 @@ export default {
     },
 };
 
-async function buildPayload(query) {
+async function buildPayload(query): Promise<IAudioPayload> {
     const firstWord = query.trim().split(" ")[0];
     const fullArgs = query;
 
@@ -95,7 +92,8 @@ async function buildPayload(query) {
 
         switch (parsed.type) {
             case "track":
-                const resp = await Spotify.getTrack(parsed.id);
+                const castedTrack = parsed as Track;
+                const resp = await Spotify.getTrack(castedTrack.id);
 
                 const track = resp.body;
                 const name = track.name;
@@ -108,7 +106,10 @@ async function buildPayload(query) {
                 }
                 return new YouTubeAudio(result[0].link, result[0].title);
             case "playlist":
-                const playlistResp = await Spotify.getPlaylist(parsed.id);
+                const castedPlaylist = parsed as Playlist;
+                const playlistResp = await Spotify.getPlaylist(
+                    castedPlaylist.id
+                );
 
                 const playlist = playlistResp.body;
                 const queries = playlist.tracks.items.map(
@@ -119,7 +120,8 @@ async function buildPayload(query) {
                 );
                 return queries.map((q) => new UnsearchedYoutubePayload(q));
             case "album":
-                const albumResp = await Spotify.getAlbumTracks(parsed.id);
+                const castedAlbum = parsed as Album;
+                const albumResp = await Spotify.getAlbumTracks(castedAlbum.id);
 
                 const album = albumResp.body;
                 const albumQueries = album.items.map(
@@ -156,7 +158,7 @@ async function buildPayload(query) {
     }
 }
 
-function parseSpotifyUri(uri) {
+function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     try {
         return parse(uri);
     } catch (e) {

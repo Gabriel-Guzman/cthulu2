@@ -3,7 +3,7 @@ import {
     YoutubePayload,
     FilePayload,
     UnsearchedYoutubePayload,
-} from "./core/Queue.js";
+} from "./core/aqm";
 import search from "./core/Search.js";
 
 export const YouTubeAudio = YoutubePayload;

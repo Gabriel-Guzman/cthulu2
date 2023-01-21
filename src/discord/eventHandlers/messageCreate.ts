@@ -38,6 +38,7 @@ async function buildCtx(message: Message) {
     }
     return {
         guildUserInfo: await cachedFindOneOrUpsert(GuildUserInfo, {
+            guildId: message.channel.guild.id,
             userId: message.author.id,
         }),
         serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
@@ -50,7 +51,8 @@ async function buildCtx(message: Message) {
 export default async function handleMessageCreate(
     client: IExtendedClient,
     message: Message
-) {
+): Promise<void> {
+    if (message.author.bot) return;
     const ctx = await buildCtx(message);
     await Promise.all([adjustMemberXp(ctx, message)]);
 }

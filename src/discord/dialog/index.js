@@ -1,6 +1,6 @@
 import sample from "lodash/sample.js";
 import find from "lodash/find.js";
-import { calculateLevel } from "../../levels/index.js";
+import { calculateLevel } from "../../levels";
 const affirmativeDefaults = {
     0: [
         "i know you haven't showered",

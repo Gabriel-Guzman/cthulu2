@@ -45,7 +45,7 @@ async function buildCommandData() {
         async (category) => {
             const commands = readdirSync(
                 `./src/discord/commands/${category}/`
-            ).filter((cmd) => cmd.endsWith(".js"));
+            ).filter((cmd) => cmd.endsWith(".ts"));
 
             for await (const command of commands) {
                 const Command = await import(

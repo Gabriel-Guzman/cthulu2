@@ -22,4 +22,17 @@ class Search {
     }
 }
 
-export default new Search(process.env.YOUTUBE_API_KEY, 10);
+export default {
+    async search(query, opts) {
+        const s = new Search(process.env.YOUTUBE_API_KEY, 10);
+        return s.search(query, opts);
+    },
+
+    async searchVideos(query) {
+        return await this.search(query, {
+            type: "video",
+        });
+    },
+};
+
+// export default new Search(process.env.YOUTUBE_API_KEY, 10);

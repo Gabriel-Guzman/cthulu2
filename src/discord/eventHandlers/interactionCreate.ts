@@ -78,6 +78,7 @@ async function buildCtx(
     return {
         guildUserInfo: await cachedFindOneOrUpsert(GuildUserInfo, {
             userId: member.id,
+            guildId: interaction.guild.id,
         }),
         serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
             guildId: interaction.guild.id,
@@ -91,5 +92,10 @@ export default async function handleInteractionCreate(
     interaction: Interaction
 ): Promise<void> {
     if (interaction.type !== "APPLICATION_COMMAND") return;
+    interaction = interaction as CommandInteraction;
     if (interaction.user.bot) return;
+
+    const ctx = await buildCtx(client, interaction as CommandInteraction);
+
+    await handleCommands(ctx, interaction as CommandInteraction);
 }
