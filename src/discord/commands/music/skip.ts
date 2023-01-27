@@ -2,6 +2,8 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { AQM } from "../../../audio/index.js";
 import { getAffirmativeDialog } from "../../dialog/index.js";
 import { cachedFindOneOrUpsert, GuildUserInfo } from "../../../db";
+import { ScoMomCommand } from "../types";
+import { CommandInteraction } from "discord.js";
 
 export default {
     name: "skip",
@@ -19,4 +21,4 @@ export default {
             getAffirmativeDialog("skip", interaction.member, userInfo)
         );
     },
-};
+} as ScoMomCommand<CommandInteraction>;

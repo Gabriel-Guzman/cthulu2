@@ -262,7 +262,6 @@ class AudioQueueManager {
 
     async queue(channel, textChannel, payload, locked = false) {
         const gq = this.queues.get(channel.guild.id);
-        console.log(gq, payload);
         if (!gq) {
             const player = createAudioPlayer({});
             player.on("error", (error) => {

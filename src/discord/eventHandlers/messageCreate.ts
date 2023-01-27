@@ -15,7 +15,7 @@ async function adjustMemberXp(
     ctx: MessageCreateContext,
     message
 ): Promise<void> {
-    if (!process.env.STAGING) {
+    if (!process.env.STAGING && !process.env.DEV) {
         await incrementUserXp(
             ctx.guildUserInfo,
             message.author,

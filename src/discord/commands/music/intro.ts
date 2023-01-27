@@ -4,6 +4,8 @@ import { getAffirmativeDialog } from "../../dialog";
 import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
 // @ts-ignore
 import ytdl from "ytdl-core";
+import { ScoMomCommand } from "../types";
+import { CommandInteraction } from "discord.js";
 
 function isValidHttpUrl(string): boolean {
     let url;
@@ -65,4 +67,4 @@ export default {
             getAffirmativeDialog("intro", interaction.member, userInfo)
         );
     },
-};
+} as ScoMomCommand<CommandInteraction>;

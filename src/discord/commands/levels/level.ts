@@ -2,6 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { cachedFindOneOrUpsert, GuildUserInfo } from "../../../db";
 import { calculateLevel, calculateXp } from "../../../levels";
 import { CommandInteraction, GuildMember } from "discord.js";
+import { ScoMomCommand } from "../types";
 
 export default {
     name: "level",
@@ -21,4 +22,4 @@ export default {
             `You're currently level ${level} with ${userInfo.xp} xp and ${xpToNextLevel} xp to next level`
         );
     },
-};
+} as ScoMomCommand<CommandInteraction>;

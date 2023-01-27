@@ -12,6 +12,8 @@ import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
 // @ts-ignore
 import ytdl from "ytdl-core";
 import { IAudioPayload } from "../../../audio/core/aqm";
+import { CommandInteraction } from "discord.js";
+import { ScoMomCommand } from "../types";
 
 export default {
     name: "queue",
@@ -78,7 +80,7 @@ export default {
             });
         }
     },
-};
+} as ScoMomCommand<CommandInteraction>;
 
 async function buildPayload(query): Promise<IAudioPayload> {
     const firstWord = query.trim().split(" ")[0];

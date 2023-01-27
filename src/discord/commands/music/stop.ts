@@ -2,6 +2,8 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { AQM } from "../../../audio";
 import { getAffirmativeDialog } from "../../dialog";
 import { cachedFindOneOrUpsert, GuildUserInfo } from "../../../db";
+import { ScoMomCommand } from "../types";
+import { CommandInteraction } from "discord.js";
 
 export default {
     name: "stop",
@@ -19,4 +21,4 @@ export default {
             getAffirmativeDialog("stop", interaction.member, userInfo)
         );
     },
-};
+} as ScoMomCommand<CommandInteraction>;

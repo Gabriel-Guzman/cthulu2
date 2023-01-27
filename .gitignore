@@ -6,3 +6,4 @@ logs
 *.env
 deploy.sh
 dist/
+local_scripts/
