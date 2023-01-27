@@ -1,7 +1,3 @@
-export function ssFileDownloadMessage(message) {
-    return `soulseek_song_message_${message.id}`;
-}
-
 function sleep(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
@@ -15,6 +11,12 @@ class Memory {
     mutex = new Map();
     ttlTimeouts = new Map();
 
+    flush() {
+        this.storage.clear();
+        this.mutex.clear();
+        this.ttlTimeouts.clear();
+    }
+
     async lock(key) {
         const entry = this.mutex.get(key);
         if (entry) {
@@ -24,7 +26,7 @@ class Memory {
         const self = this;
         let lockResolve;
         let lock;
-        await new Promise(async (outsideRes) => {
+        await new Promise<void>(async (outsideRes) => {
             lock = new Promise((res) => {
                 lockResolve = res;
                 outsideRes();
