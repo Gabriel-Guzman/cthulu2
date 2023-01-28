@@ -6,11 +6,7 @@ import {
     ServerInfo,
 } from "../../db";
 import { HydratedDocument } from "mongoose";
-import {
-    CommandInteraction,
-    GuildMember,
-    Interaction,
-} from "discord.js";
+import { CommandInteraction, GuildMember, Interaction } from "discord.js";
 import { IExtendedClient } from "../client";
 import { incrementUserXp } from "../../levels";
 

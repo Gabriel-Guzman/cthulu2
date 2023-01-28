@@ -1,5 +1,6 @@
 // require the discord.js module
 import { Client, Collection, Intents } from "discord.js";
+import { DelegationService } from "../delegator";
 
 class ExtendedClient extends Client {
     constructor(opts) {
@@ -7,6 +8,7 @@ class ExtendedClient extends Client {
         this.commands = new Collection();
     }
     commands: Collection<string, any>;
+    delegationService: DelegationService;
 }
 
 export interface IExtendedClient extends ExtendedClient {}

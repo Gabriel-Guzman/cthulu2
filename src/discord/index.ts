@@ -4,13 +4,14 @@ import db from "../db";
 import { Client } from "discord.js";
 import Commands from "./commands";
 import { ScoMomCommand } from "./commands/types";
+import config from "../config";
 
 export default async function scoMom(): Promise<Client> {
     // connect to database
     await db();
 
     // create the logged in discord client instance
-    const client = createClient();
+    const client = await createClient();
     await client.login(process.env.DISCORD_API_TOKEN);
     console.log(
         "logged in as " +
@@ -24,8 +25,12 @@ export default async function scoMom(): Promise<Client> {
     // import all our slash commands and store them in client
     storeCommands(client, Commands);
 
-    // register events for the client
-    registerEvents(client);
+    // if are a delegator or delegation is disabled
+    if (!config.delegation.role || config.delegation.role === "DELEGATOR") {
+        // register events for the client
+        registerEvents(client);
+    }
+
     return client;
 }
 

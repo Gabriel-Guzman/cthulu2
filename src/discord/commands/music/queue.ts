@@ -1,4 +1,7 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
+import {
+    SharedSlashCommandOptions,
+    SlashCommandBuilder,
+} from "@discordjs/builders";
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from "spotify-uri";
 import {
     AQM,
@@ -12,11 +15,51 @@ import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
 // @ts-ignore
 import ytdl from "ytdl-core";
 import { IAudioPayload } from "../../../audio/core/aqm";
-import { CommandInteraction } from "discord.js";
-import { ScoMomCommand } from "../types";
+import { CommandInteraction, GuildMember } from "discord.js";
+import { DelegableOptions, DelegableScoMomCommand } from "../types";
+import { IExtendedClient } from "../../client";
+import { getVoiceConnection } from "@discordjs/voice";
+
+export type BaseQueueCommandOpts = {
+    client: IExtendedClient;
+    memberId: string;
+    guildId: string;
+    voiceChannelId: string;
+    query: string;
+
+    textChannelId?: string;
+} & DelegableOptions;
+
+async function delegable(opts: BaseQueueCommandOpts): Promise<void> {
+    const { client, memberId, guildId, query, voiceChannelId, textChannelId } =
+        opts;
+    const guild = await client.guilds.fetch(guildId);
+    const voiceChannel = await guild.channels.fetch(voiceChannelId);
+    const textChannel = await guild.channels.fetch(textChannelId);
+    return _run(guild, voiceChannel, textChannel, query);
+}
+
+async function _run(guild, voiceChannel, textChannel, query) {
+    const payload = await buildPayload(query);
+
+    const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
+        guildId: guild.id,
+    });
+    if (
+        serverInfo.botReservedTextChannels &&
+        serverInfo.botReservedTextChannels.length
+    ) {
+        textChannel = await guild.channels.fetch(
+            serverInfo.botReservedTextChannels[0]
+        );
+    }
+
+    await AQM.queue(voiceChannel, textChannel, payload);
+}
 
 export default {
     name: "queue",
+    delegable,
     builder: new SlashCommandBuilder()
         .setName("queue")
         .setDescription("Add a song to the music queue")
@@ -29,8 +72,15 @@ export default {
                     "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'"
                 )
         ),
-    async run(client, interaction) {
+    async run(client, interaction: CommandInteraction) {
         const query = interaction.options.getString("query");
+        if (!(interaction.member instanceof GuildMember)) {
+            console.error(
+                "interaction.member is not a GuildMember, but a " +
+                    typeof interaction.member
+            );
+            return;
+        }
         const voiceChannel = interaction.member.voice.channel;
 
         if (!voiceChannel) {
@@ -40,23 +90,21 @@ export default {
             });
         }
 
-        try {
-            const payload = await buildPayload(query);
-
-            let textChannel;
-            const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
-                guildId: interaction.guild.id,
-            });
-            if (
-                serverInfo.botReservedTextChannels &&
-                serverInfo.botReservedTextChannels.length
-            ) {
-                textChannel = await interaction.guild.channels.fetch(
-                    serverInfo.botReservedTextChannels[0]
-                );
+        // if we're in different connections, attempt to delegate
+        const vc = getVoiceConnection(interaction.guild.id);
+        if (vc.joinConfig.channelId !== voiceChannel.id) {
+            if (!client.delegationService.disabled) {
+                // TODO delegate task
             }
+        }
 
-            await AQM.queue(voiceChannel, textChannel, payload);
+        try {
+            await _run(
+                interaction.guild,
+                voiceChannel,
+                interaction.channel.id,
+                query
+            );
 
             const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
                 userId: interaction.member.id,
@@ -80,7 +128,7 @@ export default {
             });
         }
     },
-} as ScoMomCommand<CommandInteraction>;
+} as DelegableScoMomCommand<CommandInteraction>;
 
 async function buildPayload(query): Promise<IAudioPayload> {
     const firstWord = query.trim().split(" ")[0];
