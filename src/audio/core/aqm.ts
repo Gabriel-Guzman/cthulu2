@@ -11,6 +11,7 @@ import {
     AudioPlayerStatus,
     AudioPlayer,
     PlayerSubscription,
+    VoiceConnection,
 } from "@discordjs/voice";
 
 import Search from "./Search.js";
@@ -67,7 +68,7 @@ class GuildQueue {
         this.locked = locked;
     }
 
-    shiftQueue(): AudioPayload {
+    shiftQueue(): AudioPayload | undefined {
         return this.payloads.shift();
     }
 
@@ -80,14 +81,8 @@ class AudioQueueManager {
     queues = new Map<string, GuildQueue>();
 
     async joinAndSubscribe(channel, player): Promise<PlayerSubscription> {
-        let connection;
+        let connection: VoiceConnection | undefined;
         connection = getVoiceConnection(channel.guild.id);
-
-        // connection.joinConfig.channelId
-        // fetch channel using id
-        // determine how many member are in the channel
-        // if its different and there are no members, switch over
-
         if (connection === undefined) {
             connection = joinVoiceChannel({
                 channelId: channel.id,
@@ -134,7 +129,6 @@ class AudioQueueManager {
 
             return subscription as PlayerSubscription;
         }
-
         return connection.subscribe(player);
     }
 
@@ -217,7 +211,7 @@ class AudioQueueManager {
         }
     }
 
-    async play(gq, payload) {
+    async play(gq: GuildQueue, payload) {
         let resource;
         if (payload instanceof FilePayload) {
             const file = createAudioResource(
@@ -266,6 +260,10 @@ class AudioQueueManager {
             const player = createAudioPlayer({});
             player.on("error", (error) => {
                 console.error(error);
+            });
+            player.on(AudioPlayerStatus.AutoPaused, () => {
+                // player has no connection
+                // TODO do something about it
             });
             player.on(AudioPlayerStatus.Idle, () => {
                 this.next(channel.guild.id);
