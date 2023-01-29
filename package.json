@@ -17,6 +17,7 @@
     "scripts": {
         "prod": "pm2 stop ./dist/index.js && ./node_modules/.bin/tsc && pm2 start ./dist/index.js",
         "dev": "NODE_DEV=true NODE_PATH=src/  nodemon",
+        "test": "jest",
         "pretty-quick": "pretty-quick --staged",
         "prettier": "prettier ./ -w",
         "prepare": "husky install"
