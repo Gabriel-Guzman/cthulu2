@@ -90,13 +90,15 @@ async function buildPayload(query): Promise<IAudioPayload> {
 
     let ytPayload;
 
+    const spotify = Spotify();
+
     if (parsed) {
-        await confirmCredentials(Spotify);
+        await confirmCredentials(spotify);
 
         switch (parsed.type) {
             case "track":
                 const castedTrack = parsed as Track;
-                const resp = await Spotify.getTrack(castedTrack.id);
+                const resp = await spotify.getTrack(castedTrack.id);
 
                 const track = resp.body;
                 const name = track.name;
@@ -110,7 +112,7 @@ async function buildPayload(query): Promise<IAudioPayload> {
                 return new YouTubeAudio(result[0].link, result[0].title);
             case "playlist":
                 const castedPlaylist = parsed as Playlist;
-                const playlistResp = await Spotify.getPlaylist(
+                const playlistResp = await spotify.getPlaylist(
                     castedPlaylist.id
                 );
 
@@ -124,7 +126,7 @@ async function buildPayload(query): Promise<IAudioPayload> {
                 return queries.map((q) => new UnsearchedYoutubePayload(q));
             case "album":
                 const castedAlbum = parsed as Album;
-                const albumResp = await Spotify.getAlbumTracks(castedAlbum.id);
+                const albumResp = await spotify.getAlbumTracks(castedAlbum.id);
 
                 const album = albumResp.body;
                 const albumQueries = album.items.map(

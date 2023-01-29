@@ -7,8 +7,6 @@ import {
 } from "../../db";
 import { HydratedDocument } from "mongoose";
 import {
-    BaseCommandInteraction,
-    Client,
     CommandInteraction,
     GuildMember,
     Interaction,
