@@ -2,11 +2,6 @@ import SpotifyWebApi from "spotify-web-api-node";
 
 let expires;
 
-const Spotify = new SpotifyWebApi({
-    clientId: process.env.SPOTIFY_CLIENT_ID,
-    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-});
-
 export async function confirmCredentials(spotifyInstance) {
     if (!expires || expires < new Date()) {
         console.log("refreshing credentials");
@@ -17,4 +12,9 @@ export async function confirmCredentials(spotifyInstance) {
         spotifyInstance.setAccessToken(data.body.access_token);
     }
 }
-export default Spotify;
+export default function () {
+    return new SpotifyWebApi({
+        clientId: process.env.SPOTIFY_CLIENT_ID,
+        clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    });
+}
