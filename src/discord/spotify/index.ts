@@ -1,5 +1,5 @@
 import SpotifyWebApi from "spotify-web-api-node";
-import Memory from "../../memory";
+import Memory from "@/memory";
 
 function tokenCacheKey(): string {
     return `spotify_access_token`;
@@ -10,6 +10,7 @@ export async function confirmCredentials(spotifyInstance): Promise<void> {
     if (!token) {
         console.debug("refreshing credentials");
         const data = await spotifyInstance.clientCredentialsGrant();
+        console.log("data", data);
         await Memory.writeWithTTL(
             tokenCacheKey(),
             token,

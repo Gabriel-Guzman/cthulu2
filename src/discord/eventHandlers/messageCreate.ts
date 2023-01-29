@@ -8,7 +8,7 @@ import {
 } from "../../db";
 import { HydratedDocument } from "mongoose";
 import { incrementUserXp } from "../../levels";
-import config from "../../config";
+import config from "@/config";
 import { IExtendedClient } from "../client";
 
 async function adjustMemberXp(

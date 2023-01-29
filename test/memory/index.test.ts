@@ -1,4 +1,4 @@
-import Memory from "../../src/memory/index";
+import Memory from "@/memory";
 
 beforeEach(() => {
     Memory.flush();

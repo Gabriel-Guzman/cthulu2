@@ -7,7 +7,7 @@ import {
     UnsearchedYoutubePayload,
 } from "../../../audio";
 import { getAffirmativeDialog } from "../../dialog";
-import Spotify, { confirmCredentials } from "../../spotify/index.js";
+import Spotify, { confirmCredentials } from "@/discord/spotify";
 import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
 // @ts-ignore
 import ytdl from "ytdl-core";

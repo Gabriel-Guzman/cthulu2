@@ -1,4 +1,4 @@
-import scoMom from "./src/discord";
+import scoMom from "@/discord";
 import * as dotenv from "dotenv";
 
 export function config() {
