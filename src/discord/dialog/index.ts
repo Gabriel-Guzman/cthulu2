@@ -1,6 +1,9 @@
 import sample from "lodash/sample.js";
 import find from "lodash/find.js";
 import { calculateLevel } from "@/levels";
+import { GuildMember } from "discord.js";
+import { HydratedDocument } from "mongoose";
+import { IGuildUserInfo } from "@/db";
 const affirmativeDefaults = {
     0: [
         "i know you haven't showered",
@@ -76,11 +79,15 @@ const handlerSpecificDialogs = {
     },
 };
 
-export function getAffirmativeDialog(handler, user, userInfo) {
+export function getAffirmativeDialog(
+    handler: string,
+    user: GuildMember,
+    userInfo: HydratedDocument<IGuildUserInfo>
+): string {
     const level = calculateLevel(userInfo.xp);
     const defaultsIndex = find(
         Object.keys(affirmativeDefaults).sort((a, b) => +b - +a),
-        function (n) {
+        function (n: number) {
             return n < level;
         }
     );

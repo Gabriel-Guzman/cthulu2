@@ -24,7 +24,7 @@ describe("confirmCredentials", () => {
 
         const spotify = {
             clientCredentialsGrant: jest.fn(async () => credentialsGrantResp()),
-            setAccessToken: jest.fn((token: string) => {}),
+            setAccessToken: jest.fn((_: string) => {}),
         };
         await confirmCredentials(spotify);
         expect(spotify.clientCredentialsGrant).toHaveBeenCalledTimes(0);
@@ -43,7 +43,7 @@ describe("confirmCredentials", () => {
 
         const spotify = {
             clientCredentialsGrant: jest.fn().mockReturnValueOnce(resp),
-            setAccessToken: jest.fn((token: string) => {}),
+            setAccessToken: jest.fn((_: string) => {}),
         };
 
         await confirmCredentials(spotify);

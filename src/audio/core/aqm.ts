@@ -14,7 +14,7 @@ import {
     VoiceConnection,
 } from "@discordjs/voice";
 
-import Search from "./Search.js";
+import Search from "./Search";
 import { TextBasedChannel } from "discord.js";
 
 class AudioPayload {}

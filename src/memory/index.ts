@@ -1,9 +1,3 @@
-function sleep(ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
-
 class Memory {
     constructor() {}
 

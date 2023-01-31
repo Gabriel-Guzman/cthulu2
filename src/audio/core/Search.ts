@@ -2,6 +2,8 @@ import search from "youtube-search";
 import util from "util";
 
 class Search {
+    key: string;
+    maxResults: number;
     constructor(key, maxResults) {
         this.key = key;
         this.maxResults = maxResults;
