@@ -2,9 +2,9 @@ import { IExtendedClient } from "../client";
 import { VoiceChannel, VoiceState } from "discord.js";
 import { getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
 import { AQM } from "../../audio";
-import { YoutubePayload } from "../../audio/core/aqm";
+import { YoutubePayload } from "@/audio/core/aqm";
 import { HydratedDocument } from "mongoose";
-import { cachedFindOneOrUpsert, IServerInfo, ServerInfo } from "../../db";
+import { cachedFindOneOrUpsert, IServerInfo, ServerInfo } from "@/db";
 
 async function lonely(
     ctx: VoiceStateUpdateCtx,

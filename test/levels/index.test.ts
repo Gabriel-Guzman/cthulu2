@@ -1,4 +1,4 @@
-import { calculateLevel, incrementUserXp } from "../../src/levels";
+import { calculateLevel, incrementUserXp } from "@/levels";
 
 describe("calculateLevel", () => {
     it("should return runescape levels", async () => {

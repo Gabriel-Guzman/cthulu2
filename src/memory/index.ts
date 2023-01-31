@@ -83,12 +83,6 @@ class Memory {
         console.log("GET", key);
         return data;
     }
-
-    pop(key) {
-        const data = this.get(key);
-        this.delete(key);
-        return data;
-    }
 }
 
 export default new Memory();

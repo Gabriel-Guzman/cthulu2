@@ -1,5 +1,5 @@
 import { HydratedDocument } from "mongoose";
-import { IGuildUserInfo } from "../db";
+import { IGuildUserInfo } from "@/db";
 import { GuildMember, GuildTextBasedChannel } from "discord.js";
 
 export const xpLevelIncrease = Math.pow(2, 1 / 7);

@@ -1,4 +1,4 @@
-import { IExtendedClient } from "../src/discord/client";
+import { IExtendedClient } from "@/discord/client";
 import { ApplicationCommand } from "discord.js";
 
 const { REST } = require("@discordjs/rest");

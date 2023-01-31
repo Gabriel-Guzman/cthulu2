@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { AQM } from "../../../audio/index.js";
-import { getAffirmativeDialog } from "../../dialog/index.js";
-import { cachedFindOneOrUpsert, GuildUserInfo } from "../../../db";
+import { AQM } from "@/audio";
+import { getAffirmativeDialog } from "@/discord/dialog";
+import { cachedFindOneOrUpsert, GuildUserInfo } from "@/db";
 import { ScoMomCommand } from "../types";
 import { CommandInteraction } from "discord.js";
 

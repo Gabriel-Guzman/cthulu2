@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { cachedFindOneOrUpsert, GuildUserInfo } from "../../../db";
-import { calculateLevel, calculateXp } from "../../../levels";
+import { cachedFindOneOrUpsert, GuildUserInfo } from "@/db";
+import { calculateLevel, calculateXp } from "@/levels";
 import { CommandInteraction, GuildMember } from "discord.js";
 import { ScoMomCommand } from "../types";
 

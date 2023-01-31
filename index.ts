@@ -9,4 +9,4 @@ export function config() {
 
 config();
 
-scoMom();
+scoMom().then(() => console.log("scomom initialized"));

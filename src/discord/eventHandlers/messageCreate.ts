@@ -5,9 +5,9 @@ import {
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "../../db";
+} from "@/db";
 import { HydratedDocument } from "mongoose";
-import { incrementUserXp } from "../../levels";
+import { incrementUserXp } from "@/levels";
 import config from "@/config";
 import { IExtendedClient } from "../client";
 

@@ -10,7 +10,6 @@ export async function confirmCredentials(spotifyInstance): Promise<void> {
     if (!token) {
         console.debug("refreshing credentials");
         const data = await spotifyInstance.clientCredentialsGrant();
-        console.log("data", data);
         await Memory.writeWithTTL(
             tokenCacheKey(),
             token,

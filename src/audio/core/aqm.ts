@@ -188,7 +188,7 @@ class AudioQueueManager {
         const gq = this.queues.get(guildId);
         if (gq) {
             const payloads = gq.payloads;
-            const ret = payloads.map((payload) => {
+            return payloads.map((payload) => {
                 if (payload instanceof YoutubePayload) {
                     return payload.title;
                 } else if (payload instanceof UnsearchedYoutubePayload) {
@@ -197,8 +197,6 @@ class AudioQueueManager {
                     return payload.path.split("/").reverse().pop();
                 }
             });
-
-            return ret;
         }
 
         return [];
