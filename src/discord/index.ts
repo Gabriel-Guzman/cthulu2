@@ -1,9 +1,9 @@
 import createClient, { IExtendedClient } from "./client/index";
 import eventHandlers from "./eventHandlers";
-import db from "../db";
+import db from "@/db";
 import { Client } from "discord.js";
-import Commands from "./commands";
-import { ScoMomCommand } from "./commands/types";
+import Commands from "@/discord/commands";
+import { ScoMomCommand } from "@/discord/commands/types";
 
 export default async function scoMom(): Promise<Client> {
     // connect to database

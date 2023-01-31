@@ -7,12 +7,12 @@ import {
     UnsearchedYoutubePayload,
 } from "../../../audio";
 import { getAffirmativeDialog } from "../../dialog";
-import Spotify, { confirmCredentials } from "../../spotify/index.js";
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
+import Spotify, { confirmCredentials } from "@/discord/spotify";
+import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "@/db";
 // @ts-ignore
 import ytdl from "ytdl-core";
-import { IAudioPayload } from "../../../audio/core/aqm";
-import { CommandInteraction } from "discord.js";
+import { IAudioPayload } from "@/audio/core/aqm";
+import { CommandInteraction, GuildMember, Interaction } from "discord.js";
 import { ScoMomCommand } from "../types";
 
 export default {
@@ -29,9 +29,18 @@ export default {
                     "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'"
                 )
         ),
-    async run(client, interaction) {
+    async run(client, interaction: Interaction) {
+        if (!interaction.isApplicationCommand()) {
+            return;
+        }
+
+        if (!interaction.isCommand()) {
+            return;
+        }
+
         const query = interaction.options.getString("query");
-        const voiceChannel = interaction.member.voice.channel;
+        const member = <GuildMember>interaction.member;
+        const voiceChannel = member.voice.channel;
 
         if (!voiceChannel) {
             return interaction.reply({
@@ -59,7 +68,7 @@ export default {
             await AQM.queue(voiceChannel, textChannel, payload);
 
             const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-                userId: interaction.member.id,
+                userId: member.id,
                 guildId: interaction.guild.id,
             });
             return interaction.reply(
@@ -73,7 +82,6 @@ export default {
                     ephemeral: true,
                 });
             }
-
             return interaction.reply({
                 content: "error queueing song: " + e.message,
                 ephemeral: true,

@@ -5,7 +5,7 @@ import {
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "../../db";
+} from "@/db";
 import { HydratedDocument } from "mongoose";
 import { IExtendedClient } from "../client";
 

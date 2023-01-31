@@ -1,5 +1,5 @@
 import SpotifyWebApi from "spotify-web-api-node";
-import Memory from "../../memory";
+import Memory from "@/memory";
 
 function tokenCacheKey(): string {
     return `spotify_access_token`;

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { Client, Message } from "discord.js";
+import { Client } from "discord.js";
 
 export interface ScoMomCommand<T, J = void> {
     name: string;

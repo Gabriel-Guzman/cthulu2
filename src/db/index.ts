@@ -1,5 +1,5 @@
 import mongoose, { HydratedDocument, Model } from "mongoose";
-import Memory from "../memory/index.js";
+import Memory from "@/memory";
 
 export default function () {
     return mongoose.connect(process.env.MONGODB_URI).then(() => {

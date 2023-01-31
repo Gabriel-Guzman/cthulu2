@@ -1,7 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { AQM } from "../../../audio";
 import { getAffirmativeDialog } from "../../dialog";
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "../../../db";
+import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "@/db";
 // @ts-ignore
 import ytdl from "ytdl-core";
 import { ScoMomCommand } from "../types";
@@ -24,8 +23,7 @@ async function isRealYoutubeUrl(string): Promise<boolean> {
         const songInfo = await ytdl.getInfo(
             string.replace("https://", "http://")
         );
-        if (songInfo) return true;
-        return false;
+        return !!songInfo;
     } catch (e) {
         console.error(e);
         return false;

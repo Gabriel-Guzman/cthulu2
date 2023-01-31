@@ -5,17 +5,17 @@ import {
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "../../db";
+} from "@/db";
 import { HydratedDocument } from "mongoose";
-import { incrementUserXp } from "../../levels";
-import config from "../../config";
+import { incrementUserXp } from "@/levels";
+import config from "@/config";
 import { IExtendedClient } from "../client";
 
 async function adjustMemberXp(
     ctx: MessageCreateContext,
     message
 ): Promise<void> {
-    if (!process.env.STAGING && !process.env.DEV) {
+    if (!process.env.STAGING && !process.env.NODE_DEV) {
         await incrementUserXp(
             ctx.guildUserInfo,
             message.author,

@@ -4,15 +4,11 @@ import {
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "../../db";
+} from "@/db";
 import { HydratedDocument } from "mongoose";
-import {
-    CommandInteraction,
-    GuildMember,
-    Interaction,
-} from "discord.js";
+import { CommandInteraction, GuildMember, Interaction } from "discord.js";
 import { IExtendedClient } from "../client";
-import { incrementUserXp } from "../../levels";
+import { incrementUserXp } from "@/levels";
 
 async function handleCommands(
     ctx: InteractionCreateCtx,
