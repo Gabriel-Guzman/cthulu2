@@ -18,7 +18,7 @@ export default {
             guildId: interaction.guild.id,
         });
         return interaction.reply(
-            getAffirmativeDialog('skip', interaction.member, userInfo)
+            getAffirmativeDialog('skip', interaction.member, userInfo),
         );
     },
 } as ScoMomCommand<CommandInteraction>;

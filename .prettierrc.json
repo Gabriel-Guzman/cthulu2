@@ -3,12 +3,13 @@
     "semi": true,
     "singleQuote": true,
     "arrowParens": "always",
-    "trailingComma": "es5",
+    "trailingComma": "all",
+    "parser": "typescript",
     "overrides": [
         {
-            "files": "*.ts",
+            "files": "*.json",
             "options": {
-                "parser": "typescript"
+                "parser": "json"
             }
         }
     ]
