@@ -1,18 +1,18 @@
-import { MessageReaction, User } from "discord.js";
+import { MessageReaction, User } from 'discord.js';
 import {
     cachedFindOneOrUpsert,
     GuildUserInfo,
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "@/db";
-import { HydratedDocument } from "mongoose";
-import { IExtendedClient } from "../client";
+} from '@/db';
+import { HydratedDocument } from 'mongoose';
+import { IExtendedClient } from '../client';
 
 async function acceptRules(
     ctx: MessageReactionAddCtx,
     reaction: MessageReaction,
-    user: User
+    user: User,
 ): Promise<void> {
     const { rulesMessage, beforeAcceptRole, afterAcceptRole } =
         ctx.serverInfo.acceptRules;
@@ -22,7 +22,7 @@ async function acceptRules(
             await guildUser.roles.remove(beforeAcceptRole);
             await guildUser.roles.add(afterAcceptRole);
 
-            console.log("accepted rules!");
+            console.log('accepted rules!');
         }
 
         await reaction.remove();
@@ -36,7 +36,7 @@ type MessageReactionAddCtx = {
 };
 
 async function buildCtx(reaction: MessageReaction, user: User) {
-    if (reaction.message.channel.type === "DM") {
+    if (reaction.message.channel.type === 'DM') {
         return { isDM: true };
     }
     return {
@@ -54,7 +54,7 @@ async function buildCtx(reaction: MessageReaction, user: User) {
 export default async function handleMessageReactionAdd(
     client: IExtendedClient,
     reaction: MessageReaction,
-    user: User
+    user: User,
 ): Promise<void> {
     if (user.bot) return;
     if (reaction.me) return;

@@ -1,17 +1,17 @@
-import { calculateLevel, incrementUserXp } from "@/levels";
+import { calculateLevel, incrementUserXp } from '@/levels';
 
-describe("calculateLevel", () => {
-    it("should return runescape levels", async () => {
+describe('calculateLevel', () => {
+    it('should return runescape levels', async () => {
         expect(calculateLevel(83)).toBe(1);
         expect(calculateLevel(92)).toBe(2);
     });
-    it("should throw an error", () => {
+    it('should throw an error', () => {
         expect(() => calculateLevel(0)).toThrow();
     });
 });
 
-describe("incrementUserXp", () => {
-    it("should increment level and notify", async () => {
+describe('incrementUserXp', () => {
+    it('should increment level and notify', async () => {
         const userInfo = {
             save: jest.fn(),
             xp: 83,

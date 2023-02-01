@@ -19,7 +19,7 @@ export default {
         });
 
         return interaction.reply(
-            getAffirmativeDialog('pause', interaction.member, userInfo)
+            getAffirmativeDialog('pause', interaction.member, userInfo),
         );
     },
 } as ScoMomCommand<CommandInteraction>;

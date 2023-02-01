@@ -23,7 +23,7 @@ async function isRealYoutubeUrl(string): Promise<boolean> {
 
     try {
         const songInfo = await ytdl.getInfo(
-            string.replace('https://', 'http://')
+            string.replace('https://', 'http://'),
         );
         return !!songInfo;
     } catch (e) {
@@ -37,14 +37,14 @@ export default {
     builder: new SlashCommandBuilder()
         .setName('intro')
         .setDescription(
-            'Accepts a youtube link. Choose your intro music! (please keep it short)'
+            'Accepts a youtube link. Choose your intro music! (please keep it short)',
         )
         .setDMPermission(false)
         .addStringOption((opt) =>
             opt
                 .setName('link')
                 .setDescription('the youtube link to play when you join voice')
-                .setRequired(true)
+                .setRequired(true),
         ),
     async run(client, interaction) {
         const url = interaction.options.getString('link');
@@ -64,7 +64,7 @@ export default {
             guildId: interaction.guild.id,
         });
         return interaction.reply(
-            getAffirmativeDialog('intro', interaction.member, userInfo)
+            getAffirmativeDialog('intro', interaction.member, userInfo),
         );
     },
 } as ScoMomCommand<CommandInteraction>;

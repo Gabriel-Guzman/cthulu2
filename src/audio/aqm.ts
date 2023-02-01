@@ -2,16 +2,16 @@ import ytdl from 'ytdl-core';
 import fs from 'fs';
 
 import {
-    joinVoiceChannel,
-    getVoiceConnection,
-    createAudioResource,
-    createAudioPlayer,
-    VoiceConnectionStatus,
-    entersState,
-    AudioPlayerStatus,
     AudioPlayer,
+    AudioPlayerStatus,
+    createAudioPlayer,
+    createAudioResource,
+    entersState,
+    getVoiceConnection,
+    joinVoiceChannel,
     PlayerSubscription,
     VoiceConnection,
+    VoiceConnectionStatus,
 } from '@discordjs/voice';
 
 import Search from '@/audio/search';
@@ -19,16 +19,18 @@ import { TextBasedChannel } from 'discord.js';
 
 class AudioPayload {
     public readonly requestedBy: string;
+
     constructor(requestedBy: string) {
         this.requestedBy = requestedBy;
     }
 }
 
-export interface IAudioPayload extends AudioPayload {}
+export type IAudioPayload = AudioPayload;
 
 export class YoutubePayload extends AudioPayload {
     link: string;
     title: string;
+
     constructor(link, title, requestedBy: string) {
         super(requestedBy);
         this.link = link;
@@ -39,6 +41,7 @@ export class YoutubePayload extends AudioPayload {
 export class FilePayload extends AudioPayload {
     path: string;
     volume: number;
+
     constructor(path, volume, requestedBy) {
         super(requestedBy);
         this.path = path;
@@ -48,6 +51,7 @@ export class FilePayload extends AudioPayload {
 
 export class UnsearchedYoutubePayload extends AudioPayload {
     query: string;
+
     constructor(query, requestedBy) {
         super(requestedBy);
         this.query = query;
@@ -82,8 +86,6 @@ class GuildQueue {
     }
 }
 
-class SubscriptionManager {}
-
 class AudioQueueManager {
     queues = new Map<string, GuildQueue>();
 
@@ -104,7 +106,7 @@ class AudioQueueManager {
                     });
                 }),
                 new Promise<boolean>((res) =>
-                    setTimeout(() => res(false), 5000)
+                    setTimeout(() => res(false), 5000),
                 ),
             ]);
 
@@ -119,12 +121,12 @@ class AudioQueueManager {
                         entersState(
                             connection,
                             VoiceConnectionStatus.Signalling,
-                            5_000
+                            5_000,
                         ),
                         entersState(
                             connection,
                             VoiceConnectionStatus.Connecting,
-                            5_000
+                            5_000,
                         ),
                     ]);
                     // Seems to be reconnecting to a new channel - ignore disconnect
@@ -223,7 +225,7 @@ class AudioQueueManager {
                 fs.createReadStream(payload.path),
                 {
                     inlineVolume: true,
-                }
+                },
             );
             file.volume.setVolume(payload.volume);
             resource = file;
@@ -242,7 +244,7 @@ class AudioQueueManager {
             if (!result || result.length === 0) {
                 if (gq.textChannel)
                     gq.textChannel.send(
-                        `i couldn't find "${payload.query}" on youtube :(`
+                        `i couldn't find "${payload.query}" on youtube :(`,
                     );
                 return true;
             }
@@ -278,7 +280,7 @@ class AudioQueueManager {
                 player,
                 payload,
                 textChannel,
-                subscription
+                subscription,
             );
             this.queues.set(channel.guild.id, newGQ);
 

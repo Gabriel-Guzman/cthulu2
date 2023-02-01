@@ -4,20 +4,20 @@ import {
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "@/db";
-import { HydratedDocument } from "mongoose";
-import { CommandInteraction, GuildMember, Interaction } from "discord.js";
-import { IExtendedClient } from "../client";
-import { incrementUserXp } from "@/levels";
+} from '@/db';
+import { HydratedDocument } from 'mongoose';
+import { CommandInteraction, GuildMember, Interaction } from 'discord.js';
+import { IExtendedClient } from '../client';
+import { incrementUserXp } from '@/levels';
 
 async function handleCommands(
     ctx: InteractionCreateCtx,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
 ): Promise<void> {
     const command = ctx.client.commands.get(interaction.commandName);
     if (!command) {
         await interaction.reply({
-            content: "This command is unavailable. *Check back later.*",
+            content: 'This command is unavailable. *Check back later.*',
             ephemeral: true,
         });
         ctx.client.commands.delete(interaction.commandName);
@@ -29,7 +29,7 @@ async function handleCommands(
             ctx.guildUserInfo,
             interaction.member as GuildMember,
             interaction.channel,
-            command.xpGain
+            command.xpGain,
         );
     }
 
@@ -53,7 +53,7 @@ async function handleCommands(
         await interaction.followUp({
             content: `By the way we use these channels for bot commands: ${serverInfo.botReservedTextChannels
                 .map((c) => `<#${c}>`)
-                .join(" ")}`,
+                .join(' ')}`,
             ephemeral: true,
         });
     }
@@ -67,7 +67,7 @@ type InteractionCreateCtx = {
 
 async function buildCtx(
     client: IExtendedClient,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
 ): Promise<InteractionCreateCtx> {
     const member = interaction.member as GuildMember;
     return {
@@ -84,9 +84,9 @@ async function buildCtx(
 
 export default async function handleInteractionCreate(
     client: IExtendedClient,
-    interaction: Interaction
+    interaction: Interaction,
 ): Promise<void> {
-    if (interaction.type !== "APPLICATION_COMMAND") return;
+    if (interaction.type !== 'APPLICATION_COMMAND') return;
     interaction = interaction as CommandInteraction;
     if (interaction.user.bot) return;
 

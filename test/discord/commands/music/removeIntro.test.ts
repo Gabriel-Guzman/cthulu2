@@ -1,7 +1,7 @@
-import * as db from "@/db";
-import * as dialog from "@/discord/dialog";
-import removeIntro from "@/discord/commands/music/removeIntro";
-import { GuildUserInfo, ServerInfo } from "@/db";
+import * as db from '@/db';
+import * as dialog from '@/discord/dialog';
+import removeIntro from '@/discord/commands/music/removeIntro';
+import { GuildUserInfo, ServerInfo } from '@/db';
 
 afterAll(() => {
     jest.restoreAllMocks();
@@ -9,8 +9,8 @@ afterAll(() => {
 
 const mockedInteraction = () => {
     const member = {
-        id: "member_id",
-        voice: { channel: "voice_channel" },
+        id: 'member_id',
+        voice: { channel: 'voice_channel' },
     };
     return {
         isApplicationCommand: jest.fn(),
@@ -22,7 +22,7 @@ const mockedInteraction = () => {
         member,
         reply: jest.fn(),
         guild: {
-            id: "guild_id",
+            id: 'guild_id',
             channels: {
                 fetch: jest.fn(),
             },
@@ -30,30 +30,30 @@ const mockedInteraction = () => {
     };
 };
 
-describe("removeIntro", () => {
-    it("should update the db removing the intro", async () => {
+describe('removeIntro', () => {
+    it('should update the db removing the intro', async () => {
         const serverInfo = {
-            guildId: "guild_id",
+            guildId: 'guild_id',
             intros: new Map(),
 
             save: jest.fn(),
         };
         const userInfo = {
-            userId: "user_id",
+            userId: 'user_id',
         };
         const interaction = mockedInteraction();
 
-        serverInfo.intros.set(interaction.member.id, "youtube_url");
+        serverInfo.intros.set(interaction.member.id, 'youtube_url');
         const mockedFindOne = jest
-            .spyOn(db, "cachedFindOneOrUpsert")
+            .spyOn(db, 'cachedFindOneOrUpsert')
             .mockImplementation(
                 //@ts-ignore
-                (m) => (m === GuildUserInfo ? userInfo : serverInfo)
+                (m) => (m === GuildUserInfo ? userInfo : serverInfo),
             );
 
         const getDialogMock = jest
-            .spyOn(dialog, "getAffirmativeDialog")
-            .mockImplementation(() => "dialog");
+            .spyOn(dialog, 'getAffirmativeDialog')
+            .mockImplementation(() => 'dialog');
 
         // const findOne = jest.spyOn(db, "cachedFindOneOrUpsert")
         interaction.isApplicationCommand.mockReturnValueOnce(true);
@@ -72,10 +72,10 @@ describe("removeIntro", () => {
         expect(serverInfo.intros.get(interaction.member.id)).toBe(undefined);
         expect(serverInfo.save).toHaveBeenCalledTimes(1);
         expect(getDialogMock).toHaveBeenCalledWith(
-            "removeIntro",
+            'removeIntro',
             interaction.member,
-            userInfo
+            userInfo,
         );
-        expect(interaction.reply).toHaveBeenCalledWith("dialog");
+        expect(interaction.reply).toHaveBeenCalledWith('dialog');
     });
 });

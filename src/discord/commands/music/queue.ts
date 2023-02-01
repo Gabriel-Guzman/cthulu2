@@ -19,8 +19,8 @@ export default {
                 .setRequired(true)
                 .setName('query')
                 .setDescription(
-                    "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'"
-                )
+                    "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'",
+                ),
         ),
     async run(client, interaction: Interaction) {
         if (!interaction.isApplicationCommand()) {
@@ -54,7 +54,7 @@ export default {
                 serverInfo.botReservedTextChannels.length
             ) {
                 textChannel = await interaction.guild.channels.fetch(
-                    serverInfo.botReservedTextChannels[0]
+                    serverInfo.botReservedTextChannels[0],
                 );
             }
 
@@ -65,7 +65,7 @@ export default {
                 guildId: interaction.guild.id,
             });
             return interaction.reply(
-                getAffirmativeDialog('queue', member, userInfo)
+                getAffirmativeDialog('queue', member, userInfo),
             );
         } catch (e) {
             console.error(e);

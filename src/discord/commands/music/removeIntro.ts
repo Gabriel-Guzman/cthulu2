@@ -1,16 +1,16 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { getAffirmativeDialog } from "@/discord/dialog";
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "@/db";
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { getAffirmativeDialog } from '@/discord/dialog';
+import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
-import ytdl from "ytdl-core";
-import { ScoMomCommand } from "../types";
-import { CommandInteraction, GuildMember, Interaction } from "discord.js";
+import ytdl from 'ytdl-core';
+import { ScoMomCommand } from '../types';
+import { CommandInteraction, GuildMember, Interaction } from 'discord.js';
 
 export default {
-    name: "remove intro",
+    name: 'remove intro',
     builder: new SlashCommandBuilder()
-        .setName("remove-intro")
-        .setDescription("Remove your intro music. Cannot be undone.")
+        .setName('remove-intro')
+        .setDescription('Remove your intro music. Cannot be undone.')
         .setDMPermission(false),
     async run(client, interaction: Interaction) {
         if (!interaction.isCommand() || !interaction.isApplicationCommand()) {
@@ -31,7 +31,7 @@ export default {
             guildId: interaction.guild.id,
         });
         await interaction.reply(
-            getAffirmativeDialog("removeIntro", member, userInfo)
+            getAffirmativeDialog('removeIntro', member, userInfo),
         );
     },
 } as ScoMomCommand<CommandInteraction>;

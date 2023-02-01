@@ -9,7 +9,7 @@ import { cachedFindOneOrUpsert, IServerInfo, ServerInfo } from '@/db';
 async function lonely(
     ctx: VoiceStateUpdateCtx,
     oldState: VoiceState,
-    newState: VoiceState
+    newState: VoiceState,
 ): Promise<void> {
     const voiceChannelId = newState.channelId;
     const guildId = newState.guild.id;
@@ -31,7 +31,7 @@ async function lonely(
     }
 
     const currentChannel: VoiceChannel = (await newState.guild.channels.fetch(
-        currentChannelId
+        currentChannelId,
     )) as VoiceChannel;
     const membersInCurrentChannel = currentChannel.members.size;
 
@@ -53,7 +53,7 @@ async function lonely(
 export async function intro(
     ctx: VoiceStateUpdateCtx,
     oldState: VoiceState,
-    newState: VoiceState
+    newState: VoiceState,
 ): Promise<void> {
     if (!newState.channel) return;
     if (oldState.channel) return;
@@ -68,7 +68,7 @@ export async function intro(
     try {
         await AQM.playImmediatelySilent(
             voiceChannel,
-            new YoutubePayload(introSongUrl, '', '')
+            new YoutubePayload(introSongUrl, '', ''),
         );
     } catch (error) {
         console.error(error);
@@ -82,7 +82,7 @@ type VoiceStateUpdateCtx = {
 export default async function handleVoiceStateUpdate(
     client: IExtendedClient,
     oldState: VoiceState,
-    newState: VoiceState
+    newState: VoiceState,
 ): Promise<void> {
     if (oldState.member.user.bot) return;
     const ctx: VoiceStateUpdateCtx = {

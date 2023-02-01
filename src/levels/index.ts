@@ -1,6 +1,6 @@
-import { HydratedDocument } from "mongoose";
-import { IGuildUserInfo } from "@/db";
-import { GuildMember, GuildTextBasedChannel } from "discord.js";
+import { HydratedDocument } from 'mongoose';
+import { IGuildUserInfo } from '@/db';
+import { GuildMember, GuildTextBasedChannel } from 'discord.js';
 
 export const xpLevelIncrease = Math.pow(2, 1 / 7);
 
@@ -15,7 +15,7 @@ export function calculateXp(level: number): number {
 
 // inverse of calculateXp(level)
 export function calculateLevel(xp: number): number {
-    if (xp < initalXp) throw new Error("xp must be >= initialXp");
+    if (xp < initalXp) throw new Error('xp must be >= initialXp');
     return Math.floor(Math.log(xp / initalXp) / Math.log(xpLevelIncrease) + 1);
 }
 
@@ -24,7 +24,7 @@ export async function incrementUserXp(
     userInfo: HydratedDocument<IGuildUserInfo>,
     member: GuildMember,
     channel: GuildTextBasedChannel,
-    amountToAdjust: number
+    amountToAdjust: number,
 ): Promise<void> {
     userInfo.xp = userInfo.xp + amountToAdjust;
 
@@ -32,7 +32,7 @@ export async function incrementUserXp(
     if (currentLevel > userInfo.lastLevelCongratulated) {
         userInfo.lastLevelCongratulated = currentLevel;
         await channel.send(
-            `🙌🎉🎊🥂 🙌🎉🎊🥂 ${member} you're SCO level ${currentLevel} now! 🙌🎉🎊🙌🎉🎊🥂🥂`
+            `🙌🎉🎊🥂 🙌🎉🎊🥂 ${member} you're SCO level ${currentLevel} now! 🙌🎉🎊🙌🎉🎊🥂🥂`,
         );
     }
 

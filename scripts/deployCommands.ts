@@ -1,30 +1,30 @@
-import { IExtendedClient } from "@/discord/client";
-import { ApplicationCommand } from "discord.js";
+import { IExtendedClient } from '@/discord/client';
+import { ApplicationCommand } from 'discord.js';
 
-const { REST } = require("@discordjs/rest");
-const { Routes } = require("discord-api-types/v10");
-const { config } = require("dotenv");
-const { buildCommandData } = require("../src/discord");
-const createClient = require("../src/discord/client");
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v10');
+const { config } = require('dotenv');
+const { buildCommandData } = require('../src/discord');
+const createClient = require('../src/discord/client');
 
 async function publishCommands() {
     const commandData = await buildCommandData();
     const client: IExtendedClient = await createClient.default();
     await client.login();
-    const rest = new REST({ version: "9" }).setToken(
-        process.env.DISCORD_API_TOKEN
+    const rest = new REST({ version: '9' }).setToken(
+        process.env.DISCORD_API_TOKEN,
     );
 
-    rest.on("rateLimited", (...events) =>
-        console.log("RATE LIMITED", ...events)
+    rest.on('rateLimited', (...events) =>
+        console.log('RATE LIMITED', ...events),
     );
 
     try {
         const clientId = client.application.id;
 
-        console.log("Started refreshing Slash Commands and Context Menus...");
+        console.log('Started refreshing Slash Commands and Context Menus...');
 
-        console.log("deploying " + commandData.map((c) => c.name));
+        console.log('deploying ' + commandData.map((c) => c.name));
 
         await rest
             .put(Routes.applicationCommands(clientId), {
@@ -32,11 +32,11 @@ async function publishCommands() {
             })
             .then(() => {
                 console.log(
-                    "Slash Commands and Context Menus have now been deployed."
+                    'Slash Commands and Context Menus have now been deployed.',
                 );
             });
 
-        console.log("confirmed the following: ");
+        console.log('confirmed the following: ');
         const newCommands = client.application.commands;
         const actualCommands = await newCommands.fetch();
         const cached = actualCommands.entries();

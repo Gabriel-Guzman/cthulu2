@@ -62,7 +62,7 @@ describe('queue.run', () => {
             expect.objectContaining({
                 content: expect.anything(),
                 ephemeral: true,
-            })
+            }),
         );
     });
     it('should queue the music and tell the user', async () => {
@@ -93,7 +93,7 @@ describe('queue.run', () => {
         const buildPayloadSpy = jest
             .spyOn(utils, 'buildPayload')
             .mockImplementation(
-                async () => new aqm.YoutubePayload('url', 'title', member.id)
+                async () => new aqm.YoutubePayload('url', 'title', member.id),
             );
 
         const findOneSpy = jest

@@ -11,10 +11,20 @@
         "plugin:prettier/recommended"
     ],
     "rules": {
-        "prettier/prettier": "error"
+        "prettier/prettier": "error",
+        "@typescript-eslint/ban-ts-comment": 0
     },
     "env": {
         "browser": false,
+        "node": true,
         "es6": true
-    }
+    },
+    "overrides": [
+        {
+            "files": "./*.js",
+            "rules": {
+                "@typescript-eslint/no-var-requires": 0
+            }
+        }
+    ]
 }

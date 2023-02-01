@@ -1,9 +1,9 @@
-import mongoose, { HydratedDocument, Model } from "mongoose";
-import Memory from "@/memory";
+import mongoose, { HydratedDocument, Model } from 'mongoose';
+import Memory from '@/memory';
 
 export default function () {
     return mongoose.connect(process.env.MONGODB_URI).then(() => {
-        console.info("connected to MongoDB");
+        console.info('connected to MongoDB');
     });
 }
 
@@ -13,7 +13,7 @@ const youtubeStatsSchema = new mongoose.Schema(
         action: String,
         executedBy: String,
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 const profanitySchema = new mongoose.Schema(
@@ -22,7 +22,7 @@ const profanitySchema = new mongoose.Schema(
         phrase: String,
         saidBy: String,
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 interface IAcceptRules {
@@ -103,12 +103,12 @@ const guildUserInfoSchema = new mongoose.Schema<IGuildUserInfo>({
     },
 });
 
-const YoutubeStats = mongoose.model("YouTubeStats", youtubeStatsSchema);
-const Profanity = mongoose.model("Profanity", profanitySchema);
-const ServerInfo = mongoose.model<IServerInfo>("ServerInfo", serverInfoSchema);
+const YoutubeStats = mongoose.model('YouTubeStats', youtubeStatsSchema);
+const Profanity = mongoose.model('Profanity', profanitySchema);
+const ServerInfo = mongoose.model<IServerInfo>('ServerInfo', serverInfoSchema);
 const GuildUserInfo = mongoose.model<IGuildUserInfo>(
-    "GuildUserInfo",
-    guildUserInfoSchema
+    'GuildUserInfo',
+    guildUserInfoSchema,
 );
 
 type IModels = IServerInfo | IGuildUserInfo;
@@ -120,18 +120,18 @@ const keyGens = new Map<Model<any>, CacheKeyCreator>();
 keyGens.set(
     GuildUserInfo,
     ({ userId, guildId }: IGuildUserInfo) =>
-        `guild_user_info_${userId}_${guildId}`
+        `guild_user_info_${userId}_${guildId}`,
 );
 keyGens.set(ServerInfo, ({ guildId }: IServerInfo) => `server_info_${guildId}`);
 
 export async function cachedFindOneOrUpsert<TQuery extends IModels>(
     model: Model<TQuery>,
-    opts: Partial<TQuery>
+    opts: Partial<TQuery>,
 ): Promise<HydratedDocument<TQuery>> {
     const gen = keyGens.get(model);
     if (!gen) {
         throw new Error(
-            "cachedFindOneOrUpsert called on model with no key generator"
+            'cachedFindOneOrUpsert called on model with no key generator',
         );
     }
     const key = gen(opts);
@@ -145,11 +145,11 @@ export async function cachedFindOneOrUpsert<TQuery extends IModels>(
 
 export async function cachedFindOne<T extends IModels>(
     model: Model<T>,
-    opts: Partial<T>
+    opts: Partial<T>,
 ): Promise<HydratedDocument<T> | void> {
     const gen = keyGens.get(model);
     if (!gen) {
-        throw new Error("cachedFindOne called on model with no key generator");
+        throw new Error('cachedFindOne called on model with no key generator');
     }
     const key = gen(opts);
     return _cachedFindOne(key, model, opts);
@@ -158,7 +158,7 @@ export async function cachedFindOne<T extends IModels>(
 async function _cachedFindOne<T extends IModels>(
     key: string,
     model: Model<T>,
-    opts: Partial<T>
+    opts: Partial<T>,
 ): Promise<HydratedDocument<T> | void> {
     let res = Memory.get(key);
     if (res) return res;
@@ -172,12 +172,12 @@ async function _cachedFindOne<T extends IModels>(
 
 export function removeFromCache<T extends IModels>(
     model: Model<T>,
-    opts: T
+    opts: T,
 ): void {
     const gen = keyGens.get(model);
     if (!gen) {
         throw new Error(
-            "removeFromCache called on model with no key generator"
+            'removeFromCache called on model with no key generator',
         );
     }
     return Memory.delete(gen(opts));

@@ -1,17 +1,17 @@
-import { GuildMember } from "discord.js";
+import { GuildMember } from 'discord.js';
 import {
     cachedFindOneOrUpsert,
     GuildUserInfo,
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "@/db";
-import { HydratedDocument } from "mongoose";
-import { IExtendedClient } from "../client";
+} from '@/db';
+import { HydratedDocument } from 'mongoose';
+import { IExtendedClient } from '../client';
 
 async function initRoles(
     ctx: GuildMemberAddContext,
-    member: GuildMember
+    member: GuildMember,
 ): Promise<void> {
     const acceptRules = ctx.serverInfo.acceptRules;
     if (acceptRules && member.moderatable) {
@@ -38,7 +38,7 @@ async function buildCtx(member: GuildMember): Promise<GuildMemberAddContext> {
 
 export default async function handleGuildMemberAdd(
     client: IExtendedClient,
-    member: GuildMember
+    member: GuildMember,
 ) {
     if (member.user.bot) return;
     const ctx = await buildCtx(member);

@@ -1,26 +1,26 @@
-import { Message } from "discord.js";
+import { Message } from 'discord.js';
 import {
     cachedFindOneOrUpsert,
     GuildUserInfo,
     IGuildUserInfo,
     IServerInfo,
     ServerInfo,
-} from "@/db";
-import { HydratedDocument } from "mongoose";
-import { incrementUserXp } from "@/levels";
-import config from "@/config";
-import { IExtendedClient } from "../client";
+} from '@/db';
+import { HydratedDocument } from 'mongoose';
+import { incrementUserXp } from '@/levels';
+import config from '@/config';
+import { IExtendedClient } from '../client';
 
 async function adjustMemberXp(
     ctx: MessageCreateContext,
-    message
+    message,
 ): Promise<void> {
     if (!process.env.STAGING && !process.env.NODE_DEV) {
         await incrementUserXp(
             ctx.guildUserInfo,
             message.author,
             message.channel,
-            config.levels.xpGain.events.messageCreate
+            config.levels.xpGain.events.messageCreate,
         );
     }
 }
@@ -31,7 +31,7 @@ type MessageCreateContext = {
     isDM: boolean;
 };
 async function buildCtx(message: Message) {
-    if (message.channel.type === "DM") {
+    if (message.channel.type === 'DM') {
         return {
             isDM: true,
         };
@@ -50,7 +50,7 @@ async function buildCtx(message: Message) {
 
 export default async function handleMessageCreate(
     client: IExtendedClient,
-    message: Message
+    message: Message,
 ): Promise<void> {
     if (message.author.bot) return;
     const ctx = await buildCtx(message);

@@ -33,7 +33,7 @@ class Memory {
 
     async release(key) {
         if (!this.mutex.get(key)) {
-            console.error("Release called but no lock exists");
+            console.error('Release called but no lock exists');
             return;
         }
 
@@ -42,7 +42,7 @@ class Memory {
     }
 
     async write(key, value) {
-        console.log("WRITE", key);
+        console.log('WRITE', key);
         await this.lock(key);
         this.storage.set(key, value);
         return this.release(key);
@@ -74,7 +74,7 @@ class Memory {
 
     get(key) {
         const data = this.storage.get(key);
-        console.log("GET", key);
+        console.log('GET', key);
         return data;
     }
 }

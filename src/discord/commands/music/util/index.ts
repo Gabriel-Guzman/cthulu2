@@ -23,7 +23,7 @@ function parseSpotifyUri(uri): ParsedSpotifyUri | null {
 
 export async function buildPayload(
     query: string,
-    requestedBy: string
+    requestedBy: string,
 ): Promise<IAudioPayload> {
     const firstWord = query.trim().split(' ')[0];
     const fullArgs = query;
@@ -46,7 +46,7 @@ export async function buildPayload(
                 const name = track.name;
                 const artists = track.artists.map((a) => a.name);
                 const result = await Search.searchVideos(
-                    name + ' ' + artists.join(' ')
+                    name + ' ' + artists.join(' '),
                 );
                 if (!result || result.length === 0) {
                     throw new Error("i couldn't find that on youtube :(");
@@ -54,12 +54,12 @@ export async function buildPayload(
                 return new YoutubePayload(
                     result[0].link,
                     result[0].title,
-                    requestedBy
+                    requestedBy,
                 );
             case 'playlist':
                 const castedPlaylist = parsed as Playlist;
                 const playlistResp = await spotify.getPlaylist(
-                    castedPlaylist.id
+                    castedPlaylist.id,
                 );
 
                 const playlist = playlistResp.body;
@@ -67,10 +67,10 @@ export async function buildPayload(
                     (item) =>
                         item.track.name +
                         ' ' +
-                        item.track.artists.map((a) => a.name).join(' ')
+                        item.track.artists.map((a) => a.name).join(' '),
                 );
                 return queries.map(
-                    (q) => new UnsearchedYoutubePayload(q, requestedBy)
+                    (q) => new UnsearchedYoutubePayload(q, requestedBy),
                 );
             case 'album':
                 const castedAlbum = parsed as Album;
@@ -81,10 +81,10 @@ export async function buildPayload(
                     (item) =>
                         item.name +
                         ' ' +
-                        item.artists.map((a) => a.name).join(' ')
+                        item.artists.map((a) => a.name).join(' '),
                 );
                 return albumQueries.map(
-                    (q) => new UnsearchedYoutubePayload(q, requestedBy)
+                    (q) => new UnsearchedYoutubePayload(q, requestedBy),
                 );
             default:
                 throw new Error("i don't support " + parsed.type + ' links :(');
@@ -103,16 +103,16 @@ export async function buildPayload(
             return new YoutubePayload(
                 result[0].link,
                 result[0].title,
-                requestedBy
+                requestedBy,
             );
         } else {
             const songInfo = await ytdl.getInfo(
-                firstWord.replace('https://', 'http://')
+                firstWord.replace('https://', 'http://'),
             );
             return new YoutubePayload(
                 songInfo.videoDetails.video_url,
                 songInfo.videoDetails.title,
-                requestedBy
+                requestedBy,
             );
         }
     }
