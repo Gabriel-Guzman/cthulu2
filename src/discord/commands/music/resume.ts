@@ -1,15 +1,15 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { AQM } from "@/audio";
-import { getAffirmativeDialog } from "../../dialog";
-import { cachedFindOneOrUpsert, GuildUserInfo } from "@/db";
-import { ScoMomCommand } from "../types";
-import { CommandInteraction } from "discord.js";
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { AQM } from '@/audio/aqm';
+import { getAffirmativeDialog } from '../../dialog';
+import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
+import { ScoMomCommand } from '../types';
+import { CommandInteraction } from 'discord.js';
 
 export default {
-    name: "resume",
+    name: 'resume',
     builder: new SlashCommandBuilder()
-        .setName("resume")
-        .setDescription("Unpause the music!")
+        .setName('resume')
+        .setDescription('Unpause the music!')
         .setDMPermission(false),
     async run(client, interaction) {
         AQM.resume(interaction.guild.id);
@@ -18,7 +18,7 @@ export default {
             guildId: interaction.guild.id,
         });
         return interaction.reply(
-            getAffirmativeDialog("resume", interaction.member, userInfo)
+            getAffirmativeDialog('resume', interaction.member, userInfo)
         );
     },
 } as ScoMomCommand<CommandInteraction>;
