@@ -1,12 +1,12 @@
-import queue from "@/discord/commands/music/queue";
-import * as aqm from "@/audio/core/aqm";
-import * as db from "@/db";
-import * as utils from "@/discord/commands/music/util";
-import * as dialog from "@/discord/dialog";
+import queue from '@/discord/commands/music/queue';
+import * as aqm from '@/audio/aqm';
+import * as db from '@/db';
+import * as utils from '@/discord/commands/music/util';
+import * as dialog from '@/discord/dialog';
 
 const mockedInteraction = () => {
     const member = {
-        voice: { channel: "voicechannel" },
+        voice: { channel: 'voicechannel' },
     };
     return {
         isApplicationCommand: jest.fn(),
@@ -31,7 +31,7 @@ afterEach(() => {
     jest.clearAllMocks();
 });
 
-describe("queue.run", () => {
+describe('queue.run', () => {
     it("should tell the user they're not in the right voice channel", async () => {
         const member = {
             voice: { channel: undefined },
@@ -41,13 +41,13 @@ describe("queue.run", () => {
             isCommand: jest.fn().mockReturnValueOnce(true),
 
             options: {
-                getString: jest.fn().mockReturnValueOnce("happy"),
+                getString: jest.fn().mockReturnValueOnce('happy'),
             },
             member,
             reply: jest.fn(),
             guild: {
                 channels: {
-                    fetch: jest.fn().mockReturnValueOnce("123"),
+                    fetch: jest.fn().mockReturnValueOnce('123'),
                 },
             },
         };
@@ -57,7 +57,7 @@ describe("queue.run", () => {
         expect(interaction.isApplicationCommand).toHaveBeenCalledTimes(1);
         expect(interaction.isCommand).toHaveBeenCalledTimes(1);
         expect(interaction.options.getString).toHaveBeenCalledTimes(1);
-        expect(interaction.options.getString).toHaveBeenCalledWith("query");
+        expect(interaction.options.getString).toHaveBeenCalledWith('query');
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({
                 content: expect.anything(),
@@ -65,61 +65,62 @@ describe("queue.run", () => {
             })
         );
     });
-    it("should queue the music and tell the user", async () => {
+    it('should queue the music and tell the user', async () => {
         const member = {
-            voice: { channel: "voicechannel" },
+            id: 'member_id',
+            voice: { channel: 'voicechannel', id: 'voice_channel_id' },
         };
         const interaction = {
             isApplicationCommand: jest.fn().mockReturnValueOnce(true),
             isCommand: jest.fn().mockReturnValueOnce(true),
 
             options: {
-                getString: jest.fn().mockReturnValueOnce("happy"),
+                getString: jest.fn().mockReturnValueOnce('happy'),
             },
             member,
             reply: jest.fn(),
             guild: {
                 channels: {
-                    fetch: jest.fn().mockReturnValueOnce("123"),
+                    fetch: jest.fn().mockReturnValueOnce('123'),
                 },
             },
         };
 
         const aqmQueueSpy = jest
-            .spyOn(aqm.AQM, "queue")
+            .spyOn(aqm.AQM, 'queue')
             .mockImplementation(async () => undefined);
 
         const buildPayloadSpy = jest
-            .spyOn(utils, "buildPayload")
+            .spyOn(utils, 'buildPayload')
             .mockImplementation(
-                async () => new aqm.YoutubePayload("url", "title")
+                async () => new aqm.YoutubePayload('url', 'title', member.id)
             );
 
         const findOneSpy = jest
             // .mocked(db.cachedFindOneOrUpsert)
-            .spyOn(db, "cachedFindOneOrUpsert")
+            .spyOn(db, 'cachedFindOneOrUpsert')
             // @ts-ignore
             .mockImplementationOnce(async () => ({
-                guildId: "123",
+                guildId: '123',
             }))
 
             // @ts-ignore
-            .mockImplementationOnce(async () => ({ userId: "123" }));
+            .mockImplementationOnce(async () => ({ userId: '123' }));
 
         const dialogSpy = jest
-            .spyOn(dialog, "getAffirmativeDialog")
-            .mockImplementation(() => "asdf;alkjsdf");
+            .spyOn(dialog, 'getAffirmativeDialog')
+            .mockImplementation(() => 'asdf;alkjsdf');
 
         // @ts-ignore
         await queue.run(undefined, interaction);
 
         expect(findOneSpy).toHaveBeenCalledTimes(2);
-        expect(buildPayloadSpy).toHaveBeenCalledWith("happy");
+        expect(buildPayloadSpy).toHaveBeenCalledWith('happy', member.id);
         expect(aqmQueueSpy).toHaveBeenCalledTimes(1);
         expect(interaction.reply).toHaveBeenCalledTimes(1);
         expect(dialogSpy).toHaveBeenCalledTimes(1);
-        expect(dialogSpy).toHaveBeenCalledWith("queue", interaction.member, {
-            userId: "123",
+        expect(dialogSpy).toHaveBeenCalledWith('queue', interaction.member, {
+            userId: '123',
         });
     });
 });

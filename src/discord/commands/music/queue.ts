@@ -1,23 +1,23 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { AQM } from "@/audio";
-import { getAffirmativeDialog } from "../../dialog";
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "@/db";
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { AQM } from '@/audio/aqm';
+import { getAffirmativeDialog } from '../../dialog';
+import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
-import ytdl from "ytdl-core";
-import { CommandInteraction, GuildMember, Interaction } from "discord.js";
-import { ScoMomCommand } from "../types";
-import { buildPayload } from "@/discord/commands/music/util";
+import ytdl from 'ytdl-core';
+import { CommandInteraction, GuildMember, Interaction } from 'discord.js';
+import { ScoMomCommand } from '../types';
+import { buildPayload } from '@/discord/commands/music/util';
 
 export default {
-    name: "queue",
+    name: 'queue',
     builder: new SlashCommandBuilder()
-        .setName("queue")
-        .setDescription("Add a song to the music queue")
+        .setName('queue')
+        .setDescription('Add a song to the music queue')
         .setDMPermission(false)
         .addStringOption((opt) =>
             opt
                 .setRequired(true)
-                .setName("query")
+                .setName('query')
                 .setDescription(
                     "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'"
                 )
@@ -31,19 +31,19 @@ export default {
             return;
         }
 
-        const query = interaction.options.getString("query");
+        const query = interaction.options.getString('query');
         const member = <GuildMember>interaction.member;
         const voiceChannel = member.voice.channel;
 
         if (!voiceChannel) {
             return interaction.reply({
-                content: "Must be in a voice channel to play music",
+                content: 'Must be in a voice channel to play music',
                 ephemeral: true,
             });
         }
 
         try {
-            const payload = await buildPayload(query);
+            const payload = await buildPayload(query, member.id);
 
             let textChannel;
             const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
@@ -65,18 +65,18 @@ export default {
                 guildId: interaction.guild.id,
             });
             return interaction.reply(
-                getAffirmativeDialog("queue", member, userInfo)
+                getAffirmativeDialog('queue', member, userInfo)
             );
         } catch (e) {
             console.error(e);
             if (e.body && e.body.error && e.body.error.status === 404) {
                 return interaction.reply({
-                    content: "not found :(",
+                    content: 'not found :(',
                     ephemeral: true,
                 });
             }
             return interaction.reply({
-                content: "error queueing song: " + e.message,
+                content: 'error queueing song: ' + e.message,
                 ephemeral: true,
             });
         }

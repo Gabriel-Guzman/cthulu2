@@ -1,10 +1,12 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { getAffirmativeDialog } from "../../dialog";
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from "@/db";
+// noinspection HttpUrlsUsage
+
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { getAffirmativeDialog } from '../../dialog';
+import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
-import ytdl from "ytdl-core";
-import { ScoMomCommand } from "../types";
-import { CommandInteraction } from "discord.js";
+import ytdl from 'ytdl-core';
+import { ScoMomCommand } from '../types';
+import { CommandInteraction } from 'discord.js';
 
 function isValidHttpUrl(string): boolean {
     let url;
@@ -13,7 +15,7 @@ function isValidHttpUrl(string): boolean {
     } catch (_) {
         return false;
     }
-    return url.protocol === "http:" || url.protocol === "https:";
+    return url.protocol === 'http:' || url.protocol === 'https:';
 }
 
 async function isRealYoutubeUrl(string): Promise<boolean> {
@@ -21,7 +23,7 @@ async function isRealYoutubeUrl(string): Promise<boolean> {
 
     try {
         const songInfo = await ytdl.getInfo(
-            string.replace("https://", "http://")
+            string.replace('https://', 'http://')
         );
         return !!songInfo;
     } catch (e) {
@@ -31,21 +33,21 @@ async function isRealYoutubeUrl(string): Promise<boolean> {
 }
 
 export default {
-    name: "intro",
+    name: 'intro',
     builder: new SlashCommandBuilder()
-        .setName("intro")
+        .setName('intro')
         .setDescription(
-            "Accepts a youtube link. Choose your intro music! (please keep it short)"
+            'Accepts a youtube link. Choose your intro music! (please keep it short)'
         )
         .setDMPermission(false)
         .addStringOption((opt) =>
             opt
-                .setName("link")
-                .setDescription("the youtube link to play when you join voice")
+                .setName('link')
+                .setDescription('the youtube link to play when you join voice')
                 .setRequired(true)
         ),
     async run(client, interaction) {
-        const url = interaction.options.getString("link");
+        const url = interaction.options.getString('link');
         const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
             guildId: interaction.guild.id,
         });
@@ -62,7 +64,7 @@ export default {
             guildId: interaction.guild.id,
         });
         return interaction.reply(
-            getAffirmativeDialog("intro", interaction.member, userInfo)
+            getAffirmativeDialog('intro', interaction.member, userInfo)
         );
     },
 } as ScoMomCommand<CommandInteraction>;

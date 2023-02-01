@@ -1,5 +1,5 @@
-import ytdl from "ytdl-core";
-import fs from "fs";
+import ytdl from 'ytdl-core';
+import fs from 'fs';
 
 import {
     joinVoiceChannel,
@@ -12,20 +12,25 @@ import {
     AudioPlayer,
     PlayerSubscription,
     VoiceConnection,
-} from "@discordjs/voice";
+} from '@discordjs/voice';
 
-import Search from "./Search";
-import { TextBasedChannel } from "discord.js";
+import Search from '@/audio/search';
+import { TextBasedChannel } from 'discord.js';
 
-class AudioPayload {}
+class AudioPayload {
+    public readonly requestedBy: string;
+    constructor(requestedBy: string) {
+        this.requestedBy = requestedBy;
+    }
+}
 
 export interface IAudioPayload extends AudioPayload {}
 
 export class YoutubePayload extends AudioPayload {
     link: string;
     title: string;
-    constructor(link, title) {
-        super();
+    constructor(link, title, requestedBy: string) {
+        super(requestedBy);
         this.link = link;
         this.title = title;
     }
@@ -34,8 +39,8 @@ export class YoutubePayload extends AudioPayload {
 export class FilePayload extends AudioPayload {
     path: string;
     volume: number;
-    constructor(path, volume) {
-        super();
+    constructor(path, volume, requestedBy) {
+        super(requestedBy);
         this.path = path;
         this.volume = volume;
     }
@@ -43,8 +48,8 @@ export class FilePayload extends AudioPayload {
 
 export class UnsearchedYoutubePayload extends AudioPayload {
     query: string;
-    constructor(query) {
-        super();
+    constructor(query, requestedBy) {
+        super(requestedBy);
         this.query = query;
     }
 }
@@ -77,6 +82,8 @@ class GuildQueue {
     }
 }
 
+class SubscriptionManager {}
+
 class AudioQueueManager {
     queues = new Map<string, GuildQueue>();
 
@@ -103,7 +110,7 @@ class AudioQueueManager {
 
             const subscription = winner;
             if (!winner) {
-                throw new Error("timed out waiting for voice connection");
+                throw new Error('timed out waiting for voice connection');
             }
 
             connection.on(VoiceConnectionStatus.Disconnected, async () => {
@@ -194,7 +201,7 @@ class AudioQueueManager {
                 } else if (payload instanceof UnsearchedYoutubePayload) {
                     return payload.query;
                 } else if (payload instanceof FilePayload) {
-                    return payload.path.split("/").reverse().pop();
+                    return payload.path.split('/').reverse().pop();
                 }
             });
         }
@@ -222,8 +229,8 @@ class AudioQueueManager {
             resource = file;
         } else if (payload instanceof YoutubePayload) {
             const stream = await ytdl(payload.link, {
-                filter: "audioonly",
-                quality: "highest",
+                filter: 'audioonly',
+                quality: 'highest',
                 highWaterMark: 3.2e7,
             });
 
@@ -240,8 +247,8 @@ class AudioQueueManager {
                 return true;
             }
             const stream = await ytdl(result[0].link, {
-                filter: "audioonly",
-                quality: "highest",
+                filter: 'audioonly',
+                quality: 'highest',
                 highWaterMark: 3.2e7,
             });
             resource = createAudioResource(stream);
@@ -256,7 +263,7 @@ class AudioQueueManager {
         const gq = this.queues.get(channel.guild.id);
         if (!gq) {
             const player = createAudioPlayer({});
-            player.on("error", (error) => {
+            player.on('error', (error) => {
                 console.error(error);
             });
             player.on(AudioPlayerStatus.AutoPaused, () => {

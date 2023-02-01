@@ -1,5 +1,5 @@
-import search from "youtube-search";
-import util from "util";
+import search from 'youtube-search';
+import util from 'util';
 
 class Search {
     key: string;
@@ -19,7 +19,7 @@ class Search {
 
     async searchVideos(query) {
         return await this.search(query, {
-            type: "video",
+            type: 'video',
         });
     }
 }
@@ -32,7 +32,7 @@ export default {
 
     async searchVideos(query) {
         return await this.search(query, {
-            type: "video",
+            type: 'video',
         });
     },
 };
