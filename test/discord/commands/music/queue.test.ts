@@ -68,7 +68,7 @@ describe('queue.run', () => {
     it('should queue the music and tell the user', async () => {
         const member = {
             id: 'member_id',
-            voice: { channel: 'voicechannel', id: 'voice_channel_id' },
+            voice: { channel: { id: 'voice_channel_id' } },
         };
         const interaction = {
             isApplicationCommand: jest.fn().mockReturnValueOnce(true),
@@ -97,7 +97,6 @@ describe('queue.run', () => {
             );
 
         const findOneSpy = jest
-            // .mocked(db.cachedFindOneOrUpsert)
             .spyOn(db, 'cachedFindOneOrUpsert')
             // @ts-ignore
             .mockImplementationOnce(async () => ({
@@ -109,7 +108,7 @@ describe('queue.run', () => {
 
         const dialogSpy = jest
             .spyOn(dialog, 'getAffirmativeDialog')
-            .mockImplementation(() => 'asdf;alkjsdf');
+            .mockImplementation(() => 'asdfalkjsdf');
 
         // @ts-ignore
         await queue.run(undefined, interaction);

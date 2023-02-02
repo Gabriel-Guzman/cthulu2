@@ -12,10 +12,12 @@ export default {
         .setDMPermission(false),
     async run(client, interaction: CommandInteraction) {
         const member = interaction.member as GuildMember;
+
         const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
             userId: member.id,
             guildId: interaction.guild.id,
         });
+
         const level = calculateLevel(userInfo.xp);
         const xpToNextLevel = Math.ceil(calculateXp(level + 1)) - userInfo.xp;
         return interaction.reply(
