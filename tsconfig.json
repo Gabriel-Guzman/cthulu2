@@ -15,7 +15,6 @@
         },
         "resolveJsonModule": true
     },
-    "exclude": ["dist/**"],
     "lib": ["es2015"],
     "ts-node": {
         "require": ["tsconfig-paths/register"]
