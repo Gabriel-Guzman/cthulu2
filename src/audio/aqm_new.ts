@@ -123,7 +123,7 @@ class AudioQueueManager {
         opts: QueueOpts,
         // if the payload should only be queued given that the queue is empty,
         // then this is true
-        attemptImmediate = false
+        attemptImmediate = false,
     ): Promise<void> {
         const gq = this.queues.get(opts.guildId);
         if (gq) {
