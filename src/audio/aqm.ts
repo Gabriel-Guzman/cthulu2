@@ -115,6 +115,15 @@ class AudioQueueManager {
                 throw new Error('timed out waiting for voice connection');
             }
 
+            connection.on('stateChange', (oldState, newState) => {
+                if (
+                    oldState.status === VoiceConnectionStatus.Ready &&
+                    newState.status === VoiceConnectionStatus.Connecting
+                ) {
+                    connection.configureNetworking();
+                }
+            });
+
             connection.on(VoiceConnectionStatus.Disconnected, async () => {
                 try {
                     await Promise.race([
@@ -234,7 +243,7 @@ class AudioQueueManager {
                 const stream = await ytdl(payload.link, {
                     filter: 'audioonly',
                     quality: 'highest',
-                    highWaterMark: 3.2e7,
+                    highWaterMark: 1 << 25,
                 });
 
                 resource = createAudioResource(stream);
@@ -280,6 +289,7 @@ class AudioQueueManager {
                 console.warn('music player has been autopaused');
             });
             player.on(AudioPlayerStatus.Idle, () => {
+                console.log('player has entered idle');
                 this.next(channel.guild.id);
             });
             const subscription = await this.joinAndSubscribe(channel, player);
