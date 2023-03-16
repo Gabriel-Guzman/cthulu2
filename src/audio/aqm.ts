@@ -220,42 +220,48 @@ class AudioQueueManager {
 
     async play(gq: GuildQueue, payload) {
         let resource;
-        if (payload instanceof FilePayload) {
-            const file = createAudioResource(
-                fs.createReadStream(payload.path),
-                {
-                    inlineVolume: true,
-                },
-            );
-            file.volume.setVolume(payload.volume);
-            resource = file;
-        } else if (payload instanceof YoutubePayload) {
-            const stream = await ytdl(payload.link, {
-                filter: 'audioonly',
-                quality: 'highest',
-                highWaterMark: 3.2e7,
-            });
+        try {
+            if (payload instanceof FilePayload) {
+                const file = createAudioResource(
+                    fs.createReadStream(payload.path),
+                    {
+                        inlineVolume: true,
+                    },
+                );
+                file.volume.setVolume(payload.volume);
+                resource = file;
+            } else if (payload instanceof YoutubePayload) {
+                const stream = await ytdl(payload.link, {
+                    filter: 'audioonly',
+                    quality: 'highest',
+                    highWaterMark: 3.2e7,
+                });
 
-            resource = createAudioResource(stream);
-            if (gq.textChannel)
-                gq.textChannel.send(`Now playing ${payload.title}`);
-        } else if (payload instanceof UnsearchedYoutubePayload) {
-            const result = await Search.searchVideos(payload.query);
-            if (!result || result.length === 0) {
+                resource = createAudioResource(stream);
                 if (gq.textChannel)
-                    gq.textChannel.send(
-                        `i couldn't find "${payload.query}" on youtube :(`,
-                    );
-                return true;
+                    gq.textChannel.send(`Now playing ${payload.title}`);
+            } else if (payload instanceof UnsearchedYoutubePayload) {
+                const result = await Search.searchVideos(payload.query);
+                if (!result || result.length === 0) {
+                    if (gq.textChannel)
+                        gq.textChannel.send(
+                            `i couldn't find "${payload.query}" on youtube :(`,
+                        );
+                    return true;
+                }
+                const stream = await ytdl(result[0].link, {
+                    filter: 'audioonly',
+                    quality: 'highest',
+                    highWaterMark: 3.2e7,
+                });
+                resource = createAudioResource(stream);
+                if (gq.textChannel)
+                    gq.textChannel.send(`Now playing ${result[0].title}`);
             }
-            const stream = await ytdl(result[0].link, {
-                filter: 'audioonly',
-                quality: 'highest',
-                highWaterMark: 3.2e7,
-            });
-            resource = createAudioResource(stream);
-            if (gq.textChannel)
-                gq.textChannel.send(`Now playing ${result[0].title}`);
+        } catch (error) {
+            if (gq.textChannel) gq.textChannel.send('AHHHHH!: ' + error);
+            console.error('error playing song: ', error);
+            throw error;
         }
 
         gq.player.play(resource);
@@ -266,11 +272,12 @@ class AudioQueueManager {
         if (!gq) {
             const player = createAudioPlayer({});
             player.on('error', (error) => {
-                console.error(error);
+                console.error('music player error ' + error);
             });
             player.on(AudioPlayerStatus.AutoPaused, () => {
                 // player has no connection
                 // TODO do something about it
+                console.warn('music player has been autopaused');
             });
             player.on(AudioPlayerStatus.Idle, () => {
                 this.next(channel.guild.id);
