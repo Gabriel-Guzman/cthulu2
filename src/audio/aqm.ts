@@ -153,7 +153,12 @@ class AudioQueueManager {
     _delete(guildId) {
         const gq = this.queues.get(guildId);
         if (gq) {
-            if (gq.subscription) gq.subscription.unsubscribe();
+            if (gq.subscription) {
+                gq.subscription.unsubscribe();
+                gq.player.stop();
+                delete gq.player;
+                delete gq.subscription;
+            }
             this.queues.delete(guildId);
         }
     }
@@ -200,24 +205,6 @@ class AudioQueueManager {
         if (gq) {
             gq.player.unpause();
         }
-    }
-
-    getQueue(guildId) {
-        const gq = this.queues.get(guildId);
-        if (gq) {
-            const payloads = gq.payloads;
-            return payloads.map((payload) => {
-                if (payload instanceof YoutubePayload) {
-                    return payload.title;
-                } else if (payload instanceof UnsearchedYoutubePayload) {
-                    return payload.query;
-                } else if (payload instanceof FilePayload) {
-                    return payload.path.split('/').reverse().pop();
-                }
-            });
-        }
-
-        return [];
     }
 
     skip(guildId) {
@@ -276,22 +263,10 @@ class AudioQueueManager {
         gq.player.play(resource);
     }
 
-    async queue(channel, textChannel, payload, locked = false) {
+    async queue(channel, textChannel, payload, locked = false): Promise<void> {
         const gq = this.queues.get(channel.guild.id);
         if (!gq) {
-            const player = createAudioPlayer({});
-            player.on('error', (error) => {
-                console.error('music player error ' + error);
-            });
-            player.on(AudioPlayerStatus.AutoPaused, () => {
-                // player has no connection
-                // TODO do something about it
-                console.warn('music player has been autopaused');
-            });
-            player.on(AudioPlayerStatus.Idle, () => {
-                console.log('player has entered idle');
-                this.next(channel.guild.id);
-            });
+            const player = this.createAudioPlayer(channel.guild.id);
             const subscription = await this.joinAndSubscribe(channel, player);
             const newGQ = new GuildQueue(
                 player,
@@ -302,23 +277,43 @@ class AudioQueueManager {
             this.queues.set(channel.guild.id, newGQ);
 
             await this.next(channel.guild.id);
+            return;
         } else {
-            if (locked) {
-                return false;
+            if (!locked) {
+                if (!gq.subscription) {
+                    const player = this.createAudioPlayer(channel.guild.id);
+                    gq.subscription = await this.joinAndSubscribe(
+                        channel,
+                        player,
+                    );
+                }
+                gq.addToQueue(payload);
+            } else {
+                return;
             }
-            gq.addToQueue(payload);
         }
-        return true;
     }
 
-    async playImmediately(channel, textChannel, payload) {
-        const gq = this.queues.get(channel.guild.id);
-        if (gq) {
-            return false;
-        }
+    createAudioPlayer(guildId: string): AudioPlayer {
+        const player = createAudioPlayer({});
+        player.on('error', (error) => {
+            console.error('music player error ' + error);
+        });
+        player.on(AudioPlayerStatus.AutoPaused, () => {
+            // player has no connection
+            // TODO do something about it
+            console.warn('music player has been autopaused');
+        });
+        player.on(AudioPlayerStatus.Idle, () => {
+            console.log('player has entered idle');
+            this.next(guildId).catch((e) => {
+                if (e instanceof Error) {
+                    console.error('error nexting: ' + e.message);
+                }
+            });
+        });
 
-        await this.queue(channel, textChannel, payload);
-        return true;
+        return player;
     }
 
     async playImmediatelySilent(channel, payload) {

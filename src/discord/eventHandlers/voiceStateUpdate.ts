@@ -1,8 +1,7 @@
 import { IExtendedClient } from '../client';
 import { VoiceChannel, VoiceState } from 'discord.js';
 import { getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
-import { AQM } from '@/audio/aqm';
-import { YoutubePayload } from '@/audio/aqm';
+import { AQM, YoutubePayload } from '@/audio/aqm';
 import { HydratedDocument } from 'mongoose';
 import { cachedFindOneOrUpsert, IServerInfo, ServerInfo } from '@/db';
 
