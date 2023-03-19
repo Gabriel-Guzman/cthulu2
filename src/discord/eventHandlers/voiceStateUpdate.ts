@@ -39,6 +39,10 @@ async function lonely(
         // kill voice connection and queue
         AQM.end(guildId);
 
+        const newChannel = await newState.guild.channels.fetch(voiceChannelId);
+        if (newChannel.name.toLowerCase().includes('afk')) {
+            return;
+        }
         // join new one
         joinVoiceChannel({
             channelId: voiceChannelId,
