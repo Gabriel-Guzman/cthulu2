@@ -298,6 +298,13 @@ class AudioQueueManager {
         const player = createAudioPlayer({});
         player.on('error', (error) => {
             console.error('music player error ' + error);
+            if (error?.message.includes('code: 410')) {
+                const gq = this.queues.get(guildId);
+                if (gq.textChannel)
+                    gq.textChannel.send(
+                        'there was an error playing a song. it was probably age-restricted on youtube :/',
+                    );
+            }
         });
         player.on(AudioPlayerStatus.AutoPaused, () => {
             // player has no connection
