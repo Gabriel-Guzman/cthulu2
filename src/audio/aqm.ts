@@ -116,6 +116,8 @@ class AudioQueueManager {
                 throw new Error('timed out waiting for voice connection');
             }
 
+            connection.on('debug', (m) => console.debug('vc debug: ' + m));
+
             connection.on('stateChange', (oldState, newState) => {
                 if (
                     oldState.status === VoiceConnectionStatus.Ready &&
@@ -332,6 +334,8 @@ class AudioQueueManager {
             this.next(guildId).catch((e) => {
                 if (e instanceof Error) {
                     console.error('error nexting: ' + e.message);
+                } else {
+                    console.error(e);
                 }
             });
         });
