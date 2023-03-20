@@ -184,7 +184,10 @@ class AudioQueueManager {
 
     end(guildId): void {
         const connection = getVoiceConnection(guildId);
-        if (connection) connection.destroy();
+        if (connection) {
+            console.debug('destroying voice connection');
+            connection.destroy();
+        }
         this._delete(guildId);
     }
 
