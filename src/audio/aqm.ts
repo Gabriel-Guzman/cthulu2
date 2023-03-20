@@ -316,6 +316,15 @@ class AudioQueueManager {
             // player has no connection
             // TODO do something about it
 
+            const gq = this.queues.get(guildId);
+
+            const connection = getVoiceConnection(guildId);
+            if (connection) {
+                gq.textChannel.send(
+                    'i have been autopaused, attempting to fix...',
+                );
+                connection.configureNetworking();
+            }
             console.warn('music player has been autopaused');
         });
         player.on(AudioPlayerStatus.Idle, () => {
