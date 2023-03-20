@@ -9,6 +9,7 @@ import {
     entersState,
     getVoiceConnection,
     joinVoiceChannel,
+    NoSubscriberBehavior,
     PlayerSubscription,
     VoiceConnection,
     VoiceConnectionStatus,
@@ -295,7 +296,11 @@ class AudioQueueManager {
     }
 
     createAudioPlayer(guildId: string): AudioPlayer {
-        const player = createAudioPlayer({});
+        const player = createAudioPlayer({
+            behaviors: {
+                noSubscriber: NoSubscriberBehavior.Play,
+            },
+        });
         player.on('error', (error) => {
             console.error('music player error ' + error);
             if (error?.message.includes('code: 410')) {
@@ -306,9 +311,11 @@ class AudioQueueManager {
                     );
             }
         });
+        // const gq = this.queues.get(guildId);
         player.on(AudioPlayerStatus.AutoPaused, () => {
             // player has no connection
             // TODO do something about it
+
             console.warn('music player has been autopaused');
         });
         player.on(AudioPlayerStatus.Idle, () => {
