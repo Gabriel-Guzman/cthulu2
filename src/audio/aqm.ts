@@ -320,11 +320,6 @@ class AudioQueueManager {
 
             gq.textChannel.send('(debug) i have been autopaused.');
 
-            // const connection = getVoiceConnection(guildId);
-            // if (connection) {
-            //     gq.textChannel.send('(debug) i have been autopaused.');
-            //     connection.configureNetworking();
-            // }
             console.warn('music player has been autopaused');
         });
         player.on(AudioPlayerStatus.Idle, () => {

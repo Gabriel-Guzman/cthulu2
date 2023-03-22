@@ -1,7 +1,8 @@
 import * as db from '@/db';
+import { GuildUserInfo, ServerInfo } from '@/db';
 import * as dialog from '@/discord/dialog';
 import removeIntro from '@/discord/commands/music/removeIntro';
-import { GuildUserInfo, ServerInfo } from '@/db';
+import { InteractionType } from 'discord.js';
 
 afterAll(() => {
     jest.restoreAllMocks();
@@ -14,8 +15,8 @@ const mockedInteraction = () => {
     };
     return {
         isApplicationCommand: jest.fn(),
-        isCommand: jest.fn(),
-
+        isChatInputCommand: jest.fn(),
+        type: InteractionType.ApplicationCommand,
         options: {
             getString: jest.fn(),
         },
@@ -57,7 +58,7 @@ describe('removeIntro', () => {
 
         // const findOne = jest.spyOn(db, "cachedFindOneOrUpsert")
         interaction.isApplicationCommand.mockReturnValueOnce(true);
-        interaction.isCommand.mockReturnValueOnce(true);
+        interaction.isChatInputCommand.mockReturnValueOnce(true);
         //@ts-ignore
         await removeIntro.run(undefined, interaction);
 

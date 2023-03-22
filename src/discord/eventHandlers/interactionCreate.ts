@@ -6,7 +6,12 @@ import {
     ServerInfo,
 } from '@/db';
 import { HydratedDocument } from 'mongoose';
-import { CommandInteraction, GuildMember, Interaction } from 'discord.js';
+import {
+    BaseInteraction,
+    CommandInteraction,
+    GuildMember,
+    InteractionType,
+} from 'discord.js';
 import { IExtendedClient } from '../client';
 import { incrementUserXp } from '@/levels';
 
@@ -84,10 +89,10 @@ async function buildCtx(
 
 export default async function handleInteractionCreate(
     client: IExtendedClient,
-    interaction: Interaction,
+    interaction: BaseInteraction,
 ): Promise<void> {
-    if (interaction.type !== 'APPLICATION_COMMAND') return;
-    interaction = interaction as CommandInteraction;
+    if (interaction.type !== InteractionType.ApplicationCommand) return;
+    interaction = <CommandInteraction>interaction;
     if (interaction.user.bot) return;
 
     const ctx = await buildCtx(client, interaction as CommandInteraction);

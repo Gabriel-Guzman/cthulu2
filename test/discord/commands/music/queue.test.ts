@@ -3,6 +3,7 @@ import * as aqm from '@/audio/aqm';
 import * as db from '@/db';
 import * as utils from '@/discord/commands/music/util';
 import * as dialog from '@/discord/dialog';
+import { InteractionType } from 'discord.js';
 
 const mockedInteraction = () => {
     const member = {
@@ -11,6 +12,7 @@ const mockedInteraction = () => {
     return {
         isApplicationCommand: jest.fn(),
         isCommand: jest.fn(),
+        type: InteractionType.ApplicationCommand,
 
         options: {
             getString: jest.fn(),
@@ -37,9 +39,8 @@ describe('queue.run', () => {
             voice: { channel: undefined },
         };
         const interaction = {
-            isApplicationCommand: jest.fn().mockReturnValueOnce(true),
-            isCommand: jest.fn().mockReturnValueOnce(true),
-
+            isChatInputCommand: jest.fn().mockReturnValueOnce(true),
+            type: InteractionType.ApplicationCommand,
             options: {
                 getString: jest.fn().mockReturnValueOnce('happy'),
             },
@@ -54,8 +55,7 @@ describe('queue.run', () => {
 
         // @ts-ignore
         await queue.run(member, interaction);
-        expect(interaction.isApplicationCommand).toHaveBeenCalledTimes(1);
-        expect(interaction.isCommand).toHaveBeenCalledTimes(1);
+        expect(interaction.isChatInputCommand).toHaveBeenCalledTimes(1);
         expect(interaction.options.getString).toHaveBeenCalledTimes(1);
         expect(interaction.options.getString).toHaveBeenCalledWith('query');
         expect(interaction.reply).toHaveBeenCalledWith(
@@ -71,9 +71,8 @@ describe('queue.run', () => {
             voice: { channel: { id: 'voice_channel_id' } },
         };
         const interaction = {
-            isApplicationCommand: jest.fn().mockReturnValueOnce(true),
-            isCommand: jest.fn().mockReturnValueOnce(true),
-
+            isChatInputCommand: jest.fn().mockReturnValueOnce(true),
+            type: InteractionType.ApplicationCommand,
             options: {
                 getString: jest.fn().mockReturnValueOnce('happy'),
             },

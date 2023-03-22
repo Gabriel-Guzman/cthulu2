@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { ChannelType, Message } from 'discord.js';
 import {
     cachedFindOneOrUpsert,
     GuildUserInfo,
@@ -30,8 +30,9 @@ type MessageCreateContext = {
     serverInfo?: HydratedDocument<IServerInfo>;
     isDM: boolean;
 };
+
 async function buildCtx(message: Message) {
-    if (message.channel.type === 'DM') {
+    if (message.channel.type === ChannelType.DM) {
         return {
             isDM: true,
         };

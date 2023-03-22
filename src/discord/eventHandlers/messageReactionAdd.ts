@@ -1,4 +1,4 @@
-import { MessageReaction, User } from 'discord.js';
+import { ChannelType, MessageReaction, User } from 'discord.js';
 import {
     cachedFindOneOrUpsert,
     GuildUserInfo,
@@ -36,7 +36,7 @@ type MessageReactionAddCtx = {
 };
 
 async function buildCtx(reaction: MessageReaction, user: User) {
-    if (reaction.message.channel.type === 'DM') {
+    if (reaction.message.channel.type === ChannelType.DM) {
         return { isDM: true };
     }
     return {

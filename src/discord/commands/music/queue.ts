@@ -4,7 +4,12 @@ import { getAffirmativeDialog } from '../../dialog';
 import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
-import { CommandInteraction, GuildMember, Interaction } from 'discord.js';
+import {
+    BaseInteraction,
+    CommandInteraction,
+    GuildMember,
+    InteractionType,
+} from 'discord.js';
 import { ScoMomCommand } from '../types';
 import { buildPayload } from '@/discord/commands/music/util';
 
@@ -22,12 +27,12 @@ export default {
                     "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'",
                 ),
         ),
-    async run(client, interaction: Interaction) {
-        if (!interaction.isApplicationCommand()) {
+    async run(client, interaction: BaseInteraction): Promise<void> {
+        if (!(interaction.type === InteractionType.ApplicationCommand)) {
             return;
         }
 
-        if (!interaction.isCommand()) {
+        if (!interaction.isChatInputCommand()) {
             return;
         }
 
@@ -36,10 +41,11 @@ export default {
         const voiceChannel = member.voice.channel;
 
         if (!voiceChannel) {
-            return interaction.reply({
+            await interaction.reply({
                 content: 'Must be in a voice channel to play music',
                 ephemeral: true,
             });
+            return;
         }
 
         try {
@@ -64,21 +70,24 @@ export default {
                 userId: member.id,
                 guildId: interaction.guild.id,
             });
-            return interaction.reply(
+            await interaction.reply(
                 getAffirmativeDialog('queue', member, userInfo),
             );
+            return;
         } catch (e) {
             console.error(e);
             if (e.body && e.body.error && e.body.error.status === 404) {
-                return interaction.reply({
+                await interaction.reply({
                     content: 'not found :(',
                     ephemeral: true,
                 });
+                return;
             }
-            return interaction.reply({
+            await interaction.reply({
                 content: 'error queueing song: ' + e.message,
                 ephemeral: true,
             });
+            return;
         }
     },
 } as ScoMomCommand<CommandInteraction>;
