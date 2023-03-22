@@ -318,13 +318,13 @@ class AudioQueueManager {
 
             const gq = this.queues.get(guildId);
 
-            const connection = getVoiceConnection(guildId);
-            if (connection) {
-                gq.textChannel.send(
-                    'i have been autopaused, attempting to fix...',
-                );
-                connection.configureNetworking();
-            }
+            gq.textChannel.send('(debug) i have been autopaused.');
+
+            // const connection = getVoiceConnection(guildId);
+            // if (connection) {
+            //     gq.textChannel.send('(debug) i have been autopaused.');
+            //     connection.configureNetworking();
+            // }
             console.warn('music player has been autopaused');
         });
         player.on(AudioPlayerStatus.Idle, () => {
