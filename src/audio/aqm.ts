@@ -9,7 +9,6 @@ import {
     entersState,
     getVoiceConnection,
     joinVoiceChannel,
-    NoSubscriberBehavior,
     PlayerSubscription,
     VoiceConnection,
     VoiceConnectionStatus,
@@ -301,11 +300,7 @@ class AudioQueueManager {
     }
 
     createAudioPlayer(guildId: string): AudioPlayer {
-        const player = createAudioPlayer({
-            behaviors: {
-                noSubscriber: NoSubscriberBehavior.Play,
-            },
-        });
+        const player = createAudioPlayer({});
         player.on('error', (error) => {
             console.error('music player error ' + error);
             if (error?.message.includes('code: 410')) {
