@@ -235,7 +235,7 @@ class AudioQueueManager {
                 const stream = await ytdl(payload.link, {
                     filter: 'audioonly',
                     quality: 'highest',
-                    highWaterMark: 1 << 25,
+                    highWaterMark: 3.2e7,
                 });
 
                 resource = createAudioResource(stream);
