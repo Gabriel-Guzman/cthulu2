@@ -15,7 +15,7 @@ import {
 } from '@discordjs/voice';
 
 import Search from '@/audio/search';
-import { TextBasedChannel } from 'discord.js';
+import { TextChannel } from 'discord.js';
 
 class AudioPayload {
     public readonly requestedBy: string;
@@ -61,7 +61,7 @@ export class UnsearchedYoutubePayload extends AudioPayload {
 class GuildQueue {
     payloads: Array<AudioPayload>;
     player: AudioPlayer;
-    textChannel: TextBasedChannel;
+    textChannel: TextChannel;
     subscription: PlayerSubscription;
     locked: boolean;
 
@@ -240,12 +240,12 @@ class AudioQueueManager {
 
                 resource = createAudioResource(stream);
                 if (gq.textChannel)
-                    gq.textChannel.send(`Now playing ${payload.title}`);
+                    await gq.textChannel.send(`Now playing ${payload.title}`);
             } else if (payload instanceof UnsearchedYoutubePayload) {
                 const result = await Search.searchVideos(payload.query);
                 if (!result || result.length === 0) {
                     if (gq.textChannel)
-                        gq.textChannel.send(
+                        await gq.textChannel.send(
                             `i couldn't find "${payload.query}" on youtube :(`,
                         );
                     return true;
@@ -257,10 +257,10 @@ class AudioQueueManager {
                 });
                 resource = createAudioResource(stream);
                 if (gq.textChannel)
-                    gq.textChannel.send(`Now playing ${result[0].title}`);
+                    await gq.textChannel.send(`Now playing ${result[0].title}`);
             }
         } catch (error) {
-            if (gq.textChannel) gq.textChannel.send('AHHHHH!: ' + error);
+            if (gq.textChannel) await gq.textChannel.send('AHHHHH!: ' + error);
             console.error('error playing song: ', error);
             throw error;
         }
@@ -318,7 +318,8 @@ class AudioQueueManager {
 
             const gq = this.queues.get(guildId);
 
-            gq.textChannel.send('(debug) i have been autopaused.');
+            if (gq.textChannel)
+                gq.textChannel.send('(debug) i have been autopaused.');
 
             console.warn('music player has been autopaused');
         });
