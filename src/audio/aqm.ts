@@ -116,16 +116,6 @@ class AudioQueueManager {
             }
 
             connection.on('debug', (m) => console.debug('vc debug: ' + m));
-
-            connection.on('stateChange', (oldState, newState) => {
-                if (
-                    oldState.status === VoiceConnectionStatus.Ready &&
-                    newState.status === VoiceConnectionStatus.Connecting
-                ) {
-                    connection.configureNetworking();
-                }
-            });
-
             connection.on(VoiceConnectionStatus.Disconnected, async () => {
                 try {
                     await Promise.race([
@@ -143,6 +133,7 @@ class AudioQueueManager {
                     // Seems to be reconnecting to a new channel - ignore disconnect
                 } catch (error) {
                     // Seems to be a real disconnect which SHOULDN'T be recovered from
+                    console.error('general voice connection error: ' + error);
                     this.end(channel.guild.id);
                 }
             });
@@ -318,10 +309,18 @@ class AudioQueueManager {
 
             const gq = this.queues.get(guildId);
 
+            let sentDebugChannelMessage = 0;
             if (gq.textChannel)
-                gq.textChannel.send('(debug) i have been autopaused.');
+                gq.textChannel
+                    .send('(debug) i have been autopaused.')
+                    .catch((e) => console.error(e)) &&
+                    sentDebugChannelMessage++;
 
             console.warn('music player has been autopaused');
+            console.warn({
+                debugMessageSent: sentDebugChannelMessage,
+                gq,
+            });
         });
         player.on(AudioPlayerStatus.Idle, () => {
             console.log('player has entered idle');
