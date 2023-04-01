@@ -59,6 +59,6 @@
         "spotify-uri": "^3.0.3",
         "spotify-web-api-node": "^5.0.2",
         "youtube-search": "^1.1.6",
-        "ytdl-core": "^4.11.2"
+        "ytdl-core": "^4.11.3"
     }
 }
