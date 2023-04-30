@@ -85,7 +85,6 @@ export default {
             }
             await interaction.reply({
                 content: 'error queueing song: ' + e.message,
-                ephemeral: true,
             });
             return;
         }
