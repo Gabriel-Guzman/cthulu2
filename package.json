@@ -39,7 +39,7 @@
         "@discordjs/builders": "^1.4.0",
         "@discordjs/opus": "^0.9.0",
         "@discordjs/rest": "^1.5.0",
-        "@discordjs/voice": "^0.15.0",
+        "@discordjs/voice": "^0.16.0",
         "@types/node": "^18.11.18",
         "axios": "^0.27.2",
         "body-parser": "^1.20.0",
@@ -54,11 +54,12 @@
         "moment": "^2.29.4",
         "mongoose": "^6.2.6",
         "multer": "^1.4.5-lts.1",
+        "opusscript": "^0.0.7",
         "pm2": "^5.1.2",
         "profanity-util": "^0.2.0",
         "spotify-uri": "^3.0.3",
         "spotify-web-api-node": "^5.0.2",
         "youtube-search": "^1.1.6",
-        "ytdl-core": "^4.11.4"
+        "ytdl-core": "^4.11.5"
     }
 }
