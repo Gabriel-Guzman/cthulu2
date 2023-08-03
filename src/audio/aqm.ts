@@ -162,13 +162,11 @@ class GuildQueue {
         return this.current;
     }
 
-    private async next(silent = false): Promise<void> {
+    private async next(): Promise<void> {
         const nextPayload = this.shiftQueue();
         if (nextPayload) {
             this.current = nextPayload;
             await this.setState(QueueState.PLAYING);
-
-            if (silent) return;
 
             const embed = new EmbedBuilder()
                 .setAuthor({ name: 'now playing' })

@@ -1,19 +1,22 @@
 import { IExtendedClient } from '@/discord/client';
 import { ApplicationCommand } from 'discord.js';
 
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v10');
-const { config } = require('dotenv');
-const { buildCommandData } = require('../src/discord');
-const createClient = require('../src/discord/client');
+import { REST } from '@discordjs/rest';
 
-async function publishCommands() {
-    const commandData = await buildCommandData();
-    const client: IExtendedClient = await createClient.default();
-    await client.login();
-    const rest = new REST({ version: '9' }).setToken(
-        process.env.DISCORD_API_TOKEN,
-    );
+import { Routes } from 'discord-api-types/v10';
+
+import { config } from 'dotenv';
+import commands from '../src/discord/commands';
+
+import createClient from '../src/discord/client';
+
+import appCfg from 'ecosystem.config';
+
+async function publishCommands(apiKey: string) {
+    const commandData = commands;
+    const client: IExtendedClient = await createClient();
+    await client.login(apiKey);
+    const rest = new REST({ version: '9' }).setToken(apiKey);
 
     rest.on('rateLimited', (...events) =>
         console.log('RATE LIMITED', ...events),
@@ -23,7 +26,6 @@ async function publishCommands() {
         const clientId = client.application.id;
 
         console.log('Started refreshing Slash Commands and Context Menus...');
-
         console.log('deploying ' + commandData.map((c) => c.name));
 
         await rest
@@ -51,4 +53,10 @@ async function publishCommands() {
 }
 
 config();
-publishCommands().then(console.log).catch(console.error);
+Promise.all(
+    appCfg.apps.map((app) =>
+        publishCommands(app.env_production.DISCORD_API_TOKEN),
+    ),
+)
+    .then(console.log)
+    .catch(console.error);
