@@ -37,7 +37,7 @@ async function lonely(
     // if no one else is with us
     if (membersInCurrentChannel === 1) {
         // kill voice connection and queue
-        AQM.end(guildId);
+        voiceConnection.disconnect();
 
         const newChannel = await newState.guild.channels.fetch(voiceChannelId);
         if (newChannel.name.toLowerCase().includes('afk')) {

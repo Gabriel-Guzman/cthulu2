@@ -25,8 +25,8 @@
     },
     "scripts": {
         "prod": "pm2 stop ./dist/index.js && ./node_modules/.bin/tsc && pm2 start ./dist/index.js",
-        "dev": "NODE_DEV=true NODE_PATH=src/ ts-node-dev --transpile-only index.ts",
-        "dev:no-hot": "tsc && NODE_DEV=true NODE_PATH=src/ node ./dist/index.js",
+        "dev": "NODE_DEV=true NODE_PATH=src/ ts-node-dev -r tsconfig-paths/register --transpile-only index.ts",
+        "dev:node": "tsc && NODE_DEV=true NODE_PATH=src/ node ./dist/index.js",
         "test": "jest",
         "pretty-quick": "pretty-quick --staged",
         "prettier": "prettier ./ -w",

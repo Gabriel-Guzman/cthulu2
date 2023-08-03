@@ -1,17 +1,14 @@
 // noinspection HttpUrlsUsage
 
-import { UnsearchedYoutubePayload, YoutubePayload } from '@/audio/aqm';
+import {
+    IAudioPayload,
+    UnsoughtYoutubePayload,
+    YoutubePayload,
+} from '@/audio/aqm';
 import Search from '@/audio/search';
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
-import { IAudioPayload } from '@/audio/aqm';
 import ytdl from 'ytdl-core';
 import Spotify, { confirmCredentials } from '@/discord/spotify';
-import {
-    getVoiceConnection,
-    joinVoiceChannel,
-    VoiceConnection,
-} from '@discordjs/voice';
-import { VoiceChannel } from 'discord.js';
 
 function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     try {
@@ -70,7 +67,7 @@ export async function buildPayload(
                         item.track.artists.map((a) => a.name).join(' '),
                 );
                 return queries.map(
-                    (q) => new UnsearchedYoutubePayload(q, requestedBy),
+                    (q) => new UnsoughtYoutubePayload(q, requestedBy),
                 );
             case 'album':
                 const castedAlbum = parsed as Album;
@@ -84,7 +81,7 @@ export async function buildPayload(
                         item.artists.map((a) => a.name).join(' '),
                 );
                 return albumQueries.map(
-                    (q) => new UnsearchedYoutubePayload(q, requestedBy),
+                    (q) => new UnsoughtYoutubePayload(q, requestedBy),
                 );
             default:
                 throw new Error("i don't support " + parsed.type + ' links :(');

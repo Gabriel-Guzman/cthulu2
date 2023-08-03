@@ -41,8 +41,18 @@ function storeCommands(
 
 function registerEvents(client: IExtendedClient) {
     Object.keys(eventHandlers).forEach((event) => {
-        client.on(event, (...params) =>
-            eventHandlers[event](client, ...params),
-        );
+        const role = process.env.ROLE;
+        const blackList = {
+            ['MOTHER']: [],
+            ['CHILD']: [
+                'guildMemberAdd',
+                'interactionCreate',
+                'messageReactionAdd',
+            ],
+        };
+        client.on(event, (...params) => {
+            if (blackList[role].includes(event)) return;
+            eventHandlers[event](client, ...params);
+        });
     });
 }

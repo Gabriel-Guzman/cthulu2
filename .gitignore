@@ -7,3 +7,4 @@ logs
 deploy.sh
 dist/
 local_scripts/
+ecosystem.config.js

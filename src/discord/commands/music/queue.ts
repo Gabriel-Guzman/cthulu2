@@ -9,6 +9,7 @@ import {
     CommandInteraction,
     GuildMember,
     InteractionType,
+    VoiceChannel,
 } from 'discord.js';
 import { ScoMomCommand } from '../types';
 import { buildPayload } from '@/discord/commands/music/util';
@@ -64,7 +65,7 @@ export default {
                 );
             }
 
-            await AQM.queue(voiceChannel, textChannel, payload);
+            await AQM.queue(voiceChannel as VoiceChannel, textChannel, payload);
 
             const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
                 userId: member.id,
