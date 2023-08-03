@@ -62,6 +62,7 @@ export async function intro(
     if (oldState.channel) return;
 
     const voiceChannel = newState.channel;
+    if (!voiceChannel.joinable) return;
 
     const memberId = newState.member.id;
 
@@ -94,7 +95,7 @@ export default async function handleVoiceStateUpdate(
         }),
     };
     await Promise.all([
-        lonely(ctx, oldState, newState),
+        // lonely(ctx, oldState, newState),
         intro(ctx, oldState, newState),
     ]);
 }
