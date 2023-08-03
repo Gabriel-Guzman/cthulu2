@@ -334,6 +334,8 @@ class AudioQueueManager {
         let connection = getVoiceConnection(guildId);
         if (connection) return connection;
 
+        if (!channel.joinable) throw new Error('channel is not joinable');
+
         connection = joinVoiceChannel({
             channelId: channel.id,
             guildId,
@@ -372,8 +374,7 @@ class AudioQueueManager {
                 ]);
                 // Seems to be reconnecting to a new channel - ignore disconnect
             } catch (error) {
-                connection.disconnect();
-                connection.destroy();
+                // connection.disconnect();
                 // Seems to be a real disconnect which SHOULDN'T be recovered from
                 console.error('general voice connection error: ' + error);
                 throw error;
