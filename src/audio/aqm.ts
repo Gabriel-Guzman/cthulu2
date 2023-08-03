@@ -7,6 +7,7 @@ import {
     AudioResource,
     createAudioPlayer,
     createAudioResource,
+    entersState,
     getVoiceConnection,
     joinVoiceChannel,
     PlayerSubscription,
@@ -368,31 +369,29 @@ class AudioQueueManager {
         const connection = await this.connectToVoice(channel, channel.guild.id);
 
         connection.on(VoiceConnectionStatus.Disconnected, async () => {
-            const queue = this.queues.get(channel.guild.id);
-            await queue.stop();
-            this.queues.delete(channel.guild.id);
-            return;
-            // try {
-            //     await Promise.race([
-            //         entersState(
-            //             connection,
-            //             VoiceConnectionStatus.Signalling,
-            //             5_000,
-            //         ),
-            //         entersState(
-            //             connection,
-            //             VoiceConnectionStatus.Connecting,
-            //             5_000,
-            //         ),
-            //     ]);
-            //     // Seems to be reconnecting to a new channel - ignore disconnect
-            // } catch (error) {
-            //     // connection.disconnect();
-            //     // Seems to be a real disconnect which SHOULDN'T be recovered from
-            //     console.error('general voice connection error: ' + error);
-            //     throw error;
-            // }
+            try {
+                await Promise.race([
+                    entersState(
+                        connection,
+                        VoiceConnectionStatus.Signalling,
+                        600,
+                    ),
+                    entersState(
+                        connection,
+                        VoiceConnectionStatus.Connecting,
+                        600,
+                    ),
+                ]);
+                // Seems to be reconnecting to a new channel - ignore disconnect
+            } catch (error) {
+                // Seems to be a real disconnect which SHOULDN'T be recovered from
+                connection.destroy();
+                const queue = this.queues.get(channel.guild.id);
+                await queue.stop();
+                this.queues.delete(channel.guild.id);
+            }
         });
+
         const gq = new GuildQueue(textChannel, connection);
         this.queues.set(channel.guild.id, gq);
         return gq;
