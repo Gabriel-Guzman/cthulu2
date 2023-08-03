@@ -44,11 +44,7 @@ function registerEvents(client: IExtendedClient) {
         const role = process.env.ROLE;
         const blackList = {
             ['MOTHER']: [],
-            ['CHILD']: [
-                'guildMemberAdd',
-                'interactionCreate',
-                'messageReactionAdd',
-            ],
+            ['CHILD']: ['guildMemberAdd', 'messageReactionAdd'],
         };
         client.on(event, (...params) => {
             if (blackList[role].includes(event)) return;
