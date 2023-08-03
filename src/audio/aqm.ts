@@ -199,8 +199,8 @@ class GuildQueue {
                         this.autoPausedListener,
                     );
                     this.player.off(AudioPlayerStatus.Idle, this.idleListener);
-                    this.player.stop();
                     this.payloads = [];
+                    this.player.stop();
                     this.subscription.unsubscribe();
                     delete this.player;
                 }
@@ -393,7 +393,6 @@ class AudioQueueManager {
             //     throw error;
             // }
         });
-        console.log(connection);
         const gq = new GuildQueue(textChannel, connection);
         this.queues.set(channel.guild.id, gq);
         return gq;
