@@ -214,8 +214,6 @@ class GuildQueue {
                 if (newState === QueueState.PLAYING) {
                     this.player = this.buildAudioPlayer();
                     this.subscription = this.connection.subscribe(this.player);
-                    // this.current = this.shiftQueue();
-                    // this.player.play(await this.current.toResource());
                     await this.next();
                 }
                 break;
@@ -288,6 +286,9 @@ class GuildQueue {
 
         player.on('unsubscribe', (subscription) => {
             console.log('GuildQueue: unsubscribe event from ', subscription);
+            // this is bad... i guess we'll just set not ready state to get our
+            // player in order
+            this.setState(QueueState.NOT_READY);
         });
 
         return player;
