@@ -99,6 +99,7 @@ export default {
             return;
         } else if (!pages.length) {
             await interaction.channel.send('queue is empty silly silly child.');
+            return;
         }
         await pagination(interaction, pages, client);
     },
