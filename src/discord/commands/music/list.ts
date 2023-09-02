@@ -7,6 +7,7 @@ import { CommandInteraction, GuildMember } from 'discord.js';
 import { IExtendedClient } from '@/discord/client';
 import chunk from 'lodash/chunk';
 import pagination from '@/discord/util/pagination';
+import { voiceChannelRestriction } from '@/discord/commands/music/util';
 
 export default {
     name: 'list',
@@ -20,7 +21,11 @@ export default {
     ): Promise<void> {
         const member = interaction.member as GuildMember;
         if (
-            AQM.getChannelId(interaction.guildId) !== member.voice?.channel.id
+            !member.voice ||
+            !voiceChannelRestriction(
+                interaction.guildId,
+                member.voice?.channel.id,
+            )
         ) {
             await interaction.reply({
                 content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
