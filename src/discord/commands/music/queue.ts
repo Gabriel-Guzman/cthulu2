@@ -12,7 +12,10 @@ import {
     VoiceChannel,
 } from 'discord.js';
 import { ScoMomCommand } from '../types';
-import { buildPayload } from '@/discord/commands/music/util';
+import {
+    buildPayload,
+    voiceChannelRestriction,
+} from '@/discord/commands/music/util';
 
 export default {
     name: 'queue',
@@ -49,7 +52,13 @@ export default {
             return;
         }
 
-        if (AQM.getChannelId(interaction.guildId) !== voiceChannel.id) {
+        if (
+            !member.voice ||
+            !voiceChannelRestriction(
+                interaction.guildId,
+                member.voice?.channel.id,
+            )
+        ) {
             await interaction.reply({
                 content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
                 ephemeral: true,

@@ -151,16 +151,16 @@ class GuildQueue {
         return this.state;
     }
 
-    add(payload: Payload): Promise<void> {
+    async add(payload: Payload): Promise<void> {
         this.payloads.push(payload);
-        return this.next();
+        await this.setState(QueueState.PLAYING);
     }
 
     public queue(
         payload: Payload,
         textChannel: TextChannel | null,
     ): Promise<void> {
-        this.textChannel = textChannel;
+        if (!this.textChannel) this.textChannel = textChannel;
         return this.add(payload);
     }
 
@@ -192,7 +192,7 @@ class GuildQueue {
         const nextPayload = this.shiftQueue();
         if (nextPayload) {
             this.current = nextPayload;
-            await this.setState(QueueState.PLAYING);
+            this.player.play(await this.current.toResource());
 
             const embed = new EmbedBuilder()
                 .setAuthor({ name: 'now playing' })
@@ -214,7 +214,7 @@ class GuildQueue {
                 if (newState === QueueState.PLAYING) {
                     this.player = this.buildAudioPlayer();
                     this.subscription = this.connection.subscribe(this.player);
-                    this.player.play(await this.current.toResource());
+                    await this.next();
                 }
                 break;
             case QueueState.PLAYING:
@@ -286,6 +286,9 @@ class GuildQueue {
 
         player.on('unsubscribe', (subscription) => {
             console.log('GuildQueue: unsubscribe event from ', subscription);
+            // this is bad... i guess we'll just set not ready state to get our
+            // player in order
+            this.setState(QueueState.NOT_READY);
         });
 
         return player;
@@ -319,7 +322,7 @@ class AudioQueueManager {
     skip(guildId): void {
         const gq = this.queues.get(guildId);
         if (gq) {
-            gq.stop();
+            gq.skip();
         }
     }
 

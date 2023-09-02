@@ -1,6 +1,11 @@
 // noinspection HttpUrlsUsage
 
-import { Payload, UnsoughtYoutubePayload, YoutubePayload } from '@/audio/aqm';
+import {
+    AQM,
+    Payload,
+    UnsoughtYoutubePayload,
+    YoutubePayload,
+} from '@/audio/aqm';
 import Search from '@/audio/search';
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
 import ytdl from 'ytdl-core';
@@ -12,6 +17,19 @@ function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     } catch (e) {
         return null;
     }
+}
+
+export function voiceChannelRestriction(
+    guildId: string,
+    channelId: string,
+): boolean {
+    if (AQM.getChannelId(guildId) && AQM.getChannelId(guildId) !== channelId) {
+        return false;
+    } else if (!channelId) {
+        return false;
+    }
+
+    return true;
 }
 
 export async function buildPayload(
