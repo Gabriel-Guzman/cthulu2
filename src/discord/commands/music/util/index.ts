@@ -24,10 +24,12 @@ export function voiceChannelRestriction(
     channelId: string,
 ): boolean {
     if (AQM.getChannelId(guildId) && AQM.getChannelId(guildId) !== channelId) {
-        return true;
+        return false;
+    } else if (!channelId) {
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 export async function buildPayload(
