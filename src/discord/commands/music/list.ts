@@ -88,24 +88,6 @@ export default {
             gq.textChannel.send(pages[0]);
             return;
         }
-        pagination(interaction, pages, client);
-
-        // .addField(
-        //     'Total songs: \n',
-        //     `\`${player.queue.totalSize - 1}\``,
-        //     true,
-        // );
-
-        // const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-        //     userId: (interaction.member as GuildMember).id,
-        //     guildId: interaction.guild.id,
-        // });
-        // await interaction.reply(
-        //     getAffirmativeDialog(
-        //         'skip',
-        //         interaction.member as GuildMember,
-        //         userInfo,
-        //     ),
-        // );
+        await pagination(interaction, pages, client);
     },
 } as ScoMomCommand<CommandInteraction>;

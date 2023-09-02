@@ -1,8 +1,8 @@
 import { IExtendedClient } from '@/discord/client';
-import { Message } from 'discord.js';
+import { CommandInteraction } from 'discord.js';
 
 const pagination = async (
-    msg: Message,
+    msg: CommandInteraction,
     pages,
     client: IExtendedClient,
     emojiList = ['◀️', '⏹️', '▶️'],
@@ -15,7 +15,8 @@ const pagination = async (
     const curPage = await msg.channel.send(
         pages[page].setFooter({
             text: `Page ${page + 1}/${pages.length} `,
-            iconURL: msg.author.displayAvatarURL(),
+            iconURL: msg.member.avatar,
+            // iconURL: msg.author.displayAvatarURL(),
         }),
     );
     for (const emoji of emojiList) await curPage.react(emoji);
@@ -25,7 +26,7 @@ const pagination = async (
             emojiList.includes(reaction.emoji.name) && !user.bot,
     });
     reactionCollector.on('collect', (reaction) => {
-        reaction.users.remove(msg.author);
+        reaction.users.remove(msg.user);
         switch (reaction.emoji.name) {
             case emojiList[0]:
                 page = page > 0 ? --page : pages.length - 1;
@@ -40,7 +41,7 @@ const pagination = async (
         curPage.edit(
             pages[page].setFooter({
                 text: `Page ${page + 1}/${pages.length} `,
-                iconURL: msg.author.displayAvatarURL(),
+                iconURL: msg.user.defaultAvatarURL,
             }),
         );
     });
