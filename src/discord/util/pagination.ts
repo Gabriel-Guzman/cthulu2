@@ -12,7 +12,7 @@ const pagination = async (
     if (!pages) throw new Error('Pages are not given.');
 
     let page = 0;
-    const curPage = await msg.channel.send(
+    const curPage = await msg.reply(
         pages[page].setFooter({
             text: `Page ${page + 1}/${pages.length} `,
             iconURL: msg.member.avatar,

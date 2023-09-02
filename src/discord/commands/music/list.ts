@@ -94,5 +94,6 @@ export default {
             return;
         }
         await pagination(interaction, pages, client);
+        // await interaction.reply(page);
     },
 } as ScoMomCommand<CommandInteraction>;
