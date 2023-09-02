@@ -192,7 +192,7 @@ class GuildQueue {
         const nextPayload = this.shiftQueue();
         if (nextPayload) {
             this.current = nextPayload;
-            await this.setState(QueueState.PLAYING);
+            this.player.play(await this.current.toResource());
 
             const embed = new EmbedBuilder()
                 .setAuthor({ name: 'now playing' })
@@ -214,7 +214,9 @@ class GuildQueue {
                 if (newState === QueueState.PLAYING) {
                     this.player = this.buildAudioPlayer();
                     this.subscription = this.connection.subscribe(this.player);
-                    this.player.play(await this.current.toResource());
+                    // this.current = this.shiftQueue();
+                    // this.player.play(await this.current.toResource());
+                    await this.next();
                 }
                 break;
             case QueueState.PLAYING:
