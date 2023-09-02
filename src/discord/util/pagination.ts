@@ -2,20 +2,21 @@ import { IExtendedClient } from '@/discord/client';
 import { CommandInteraction } from 'discord.js';
 
 const pagination = async (
-    msg: CommandInteraction,
+    interaction: CommandInteraction,
     pages,
     client: IExtendedClient,
     emojiList = ['◀️', '⏹️', '▶️'],
     timeout = 120000,
 ) => {
-    if (!msg && !msg.channel) throw new Error('Channel is inaccessible.');
+    if (!interaction && !interaction.channel)
+        throw new Error('Channel is inaccessible.');
     if (!pages) throw new Error('Pages are not given.');
 
     let page = 0;
-    const curPage = await msg.reply(
+    const curPage = await interaction.channel.send(
         pages[page].setFooter({
             text: `Page ${page + 1}/${pages.length} `,
-            iconURL: msg.member.avatar,
+            iconURL: interaction.member.avatar,
             // iconURL: msg.author.displayAvatarURL(),
         }),
     );
@@ -26,7 +27,7 @@ const pagination = async (
             emojiList.includes(reaction.emoji.name) && !user.bot,
     });
     reactionCollector.on('collect', (reaction) => {
-        reaction.users.remove(msg.user);
+        reaction.users.remove(interaction.user);
         switch (reaction.emoji.name) {
             case emojiList[0]:
                 page = page > 0 ? --page : pages.length - 1;
@@ -41,7 +42,7 @@ const pagination = async (
         curPage.edit(
             pages[page].setFooter({
                 text: `Page ${page + 1}/${pages.length} `,
-                iconURL: msg.user.defaultAvatarURL,
+                iconURL: interaction.user.defaultAvatarURL,
             }),
         );
     });

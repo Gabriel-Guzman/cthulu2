@@ -43,6 +43,7 @@ export default {
             interaction.member as GuildMember,
             userInfo,
         );
+        await interaction.reply(reply);
 
         const gq = AQM.queues.get(interaction.guild.id);
 
@@ -90,7 +91,7 @@ export default {
         });
 
         if (!pages.length || pages.length === 1) {
-            gq.textChannel.send(pages[0]);
+            await interaction.channel.send(pages[0]);
             return;
         }
         await pagination(interaction, pages, client);
