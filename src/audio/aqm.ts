@@ -321,7 +321,7 @@ class AudioQueueManager {
     skip(guildId): void {
         const gq = this.queues.get(guildId);
         if (gq) {
-            gq.stop();
+            gq.skip();
         }
     }
 
