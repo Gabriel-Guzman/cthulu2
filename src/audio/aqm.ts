@@ -131,7 +131,7 @@ enum QueueState {
     PLAYING,
 }
 
-type Payload = UnsoughtYoutubePayload | YoutubePayload;
+export type Payload = UnsoughtYoutubePayload | YoutubePayload;
 
 class GuildQueue {
     payloads: Array<Payload> = [];

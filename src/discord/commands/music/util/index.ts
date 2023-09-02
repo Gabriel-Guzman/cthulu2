@@ -1,10 +1,6 @@
 // noinspection HttpUrlsUsage
 
-import {
-    IAudioPayload,
-    UnsoughtYoutubePayload,
-    YoutubePayload,
-} from '@/audio/aqm';
+import { Payload, UnsoughtYoutubePayload, YoutubePayload } from '@/audio/aqm';
 import Search from '@/audio/search';
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
 import ytdl from 'ytdl-core';
@@ -21,7 +17,7 @@ function parseSpotifyUri(uri): ParsedSpotifyUri | null {
 export async function buildPayload(
     query: string,
     requestedBy: string,
-): Promise<IAudioPayload> {
+): Promise<Payload> {
     const firstWord = query.trim().split(' ')[0];
     const fullArgs = query;
 
