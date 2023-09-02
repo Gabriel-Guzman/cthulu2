@@ -65,9 +65,9 @@ export default {
                 .map((t: IAudioPayload, index) => {
                     return `\`${
                         index + 1
-                    }.\` [${t.getTitle()}](${t.getLink()}) \n\ requested by: ${
+                    }.\` [${t.getTitle()}](${t.getLink()}) \n\ requested by: <@${
                         t.requestedBy
-                    }\n`;
+                    }>\n`;
                 })
                 .join('\n');
 
