@@ -151,16 +151,16 @@ class GuildQueue {
         return this.state;
     }
 
-    add(payload: Payload): Promise<void> {
+    async add(payload: Payload): Promise<void> {
         this.payloads.push(payload);
-        return this.next();
+        await this.setState(QueueState.PLAYING);
     }
 
     public queue(
         payload: Payload,
         textChannel: TextChannel | null,
     ): Promise<void> {
-        this.textChannel = textChannel;
+        if (!this.textChannel) this.textChannel = textChannel;
         return this.add(payload);
     }
 
