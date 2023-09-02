@@ -49,6 +49,14 @@ export default {
             return;
         }
 
+        if (AQM.getChannelId(interaction.guildId) !== voiceChannel.id) {
+            await interaction.reply({
+                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
+                ephemeral: true,
+            });
+            return;
+        }
+
         try {
             const payload = await buildPayload(query, member.id);
 

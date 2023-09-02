@@ -72,7 +72,7 @@ export async function intro(
     try {
         await AQM.playImmediatelySilent(
             voiceChannel,
-            new YoutubePayload(introSongUrl, '', ''),
+            new YoutubePayload(introSongUrl, '', '', ''),
         );
     } catch (error) {
         console.error(error);

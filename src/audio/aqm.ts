@@ -26,6 +26,8 @@ interface AudioPayload {
     getTitle(): string | Promise<string>;
 
     getLink(): string | Promise<string>;
+
+    getThumbnail(): string | Promise<string>;
 }
 
 export type IAudioPayload = AudioPayload;
@@ -33,12 +35,19 @@ export type IAudioPayload = AudioPayload;
 export class YoutubePayload implements AudioPayload {
     readonly link: string;
     readonly title: string;
+    readonly thumbnail: string;
     requestedBy: string;
 
-    constructor(link: string, title: string, requestedBy: string) {
+    constructor(
+        link: string,
+        title: string,
+        requestedBy: string,
+        thumbnail: string,
+    ) {
         this.link = link;
         this.title = title;
         this.requestedBy = requestedBy;
+        this.thumbnail = thumbnail;
     }
 
     async toResource(): Promise<AudioResource> {
@@ -56,6 +65,10 @@ export class YoutubePayload implements AudioPayload {
 
     getLink(): string {
         return this.link;
+    }
+
+    getThumbnail(): string {
+        return this.thumbnail;
     }
 }
 
@@ -85,7 +98,17 @@ export class UnsoughtYoutubePayload implements AudioPayload {
         return this._payload.getLink();
     }
 
-    private async load(): Promise<void> {
+    async getThumbnail(): Promise<string> {
+        await this.load();
+        return this._payload.getThumbnail();
+    }
+
+    async toYoutubePayload(): Promise<YoutubePayload> {
+        await this.load();
+        return this._payload;
+    }
+
+    async load(): Promise<void> {
         if (this._payload) return;
         const result = await Search.searchVideos(this.query);
         if (!result || result.length === 0) {
@@ -98,6 +121,7 @@ export class UnsoughtYoutubePayload implements AudioPayload {
             item.link,
             item.title,
             this.requestedBy,
+            item.thumbnails.default,
         );
     }
 }
@@ -107,8 +131,10 @@ enum QueueState {
     PLAYING,
 }
 
+type Payload = UnsoughtYoutubePayload | YoutubePayload;
+
 class GuildQueue {
-    payloads: Array<AudioPayload> = [];
+    payloads: Array<Payload> = [];
     subscription?: PlayerSubscription;
     textChannel: TextChannel;
     connection: VoiceConnection;
@@ -125,13 +151,13 @@ class GuildQueue {
         return this.state;
     }
 
-    add(payload: AudioPayload): Promise<void> {
+    add(payload: Payload): Promise<void> {
         this.payloads.push(payload);
         return this.next();
     }
 
     public queue(
-        payload: AudioPayload,
+        payload: Payload,
         textChannel: TextChannel | null,
     ): Promise<void> {
         this.textChannel = textChannel;
@@ -154,7 +180,7 @@ class GuildQueue {
         this.player.unpause();
     }
 
-    list(): AudioPayload[] {
+    list(): Payload[] {
         return this.payloads;
     }
 
@@ -297,10 +323,18 @@ class AudioQueueManager {
         }
     }
 
+    list(guildId: string): Payload[] {
+        const gq = this.queues.get(guildId);
+        if (gq) {
+            return gq.list();
+        }
+        return [];
+    }
+
     async queue(
         channel: VoiceChannel,
         textChannel: TextChannel | null,
-        payload: AudioPayload,
+        payload: Payload,
     ): Promise<void> {
         let gq = this.queues.get(channel.guild.id);
         if (gq) {
@@ -310,6 +344,13 @@ class AudioQueueManager {
 
         gq = await this.newGuildQueue(channel, textChannel);
         await gq.add(payload);
+    }
+
+    getChannelId(guildId: string): string {
+        const gq = this.queues.get(guildId);
+        if (gq) {
+            return gq.connection.joinConfig.channelId;
+        }
     }
 
     async playImmediatelySilent(channel, payload) {

@@ -3,7 +3,7 @@ import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '@/discord/dialog';
 import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
 import { ScoMomCommand } from '../types';
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, GuildMember } from 'discord.js';
 
 export default {
     name: 'skip',
@@ -11,14 +11,29 @@ export default {
         .setName('skip')
         .setDescription('Skip the current song')
         .setDMPermission(false),
-    async run(client, interaction) {
+    async run(client, interaction: CommandInteraction) {
+        const member = interaction.member as GuildMember;
+        if (
+            AQM.getChannelId(interaction.guildId) !== member.voice?.channel.id
+        ) {
+            await interaction.reply({
+                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
+                ephemeral: true,
+            });
+            return;
+        }
+
         AQM.skip(interaction.guild.id);
         const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-            userId: interaction.member.id,
+            userId: (interaction.member as GuildMember).id,
             guildId: interaction.guild.id,
         });
-        return interaction.reply(
-            getAffirmativeDialog('skip', interaction.member, userInfo),
+        await interaction.reply(
+            getAffirmativeDialog(
+                'skip',
+                interaction.member as GuildMember,
+                userInfo,
+            ),
         );
     },
 } as ScoMomCommand<CommandInteraction>;

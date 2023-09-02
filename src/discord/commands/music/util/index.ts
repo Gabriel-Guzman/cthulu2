@@ -52,6 +52,7 @@ export async function buildPayload(
                     result[0].link,
                     result[0].title,
                     requestedBy,
+                    result[0].thumbnails.default,
                 );
             case 'playlist':
                 const castedPlaylist = parsed as Playlist;
@@ -101,6 +102,7 @@ export async function buildPayload(
                 result[0].link,
                 result[0].title,
                 requestedBy,
+                result[0].thumbnails.default,
             );
         } else {
             const songInfo = await ytdl.getInfo(
@@ -110,6 +112,7 @@ export async function buildPayload(
                 songInfo.videoDetails.video_url,
                 songInfo.videoDetails.title,
                 requestedBy,
+                songInfo.thumbnail_url,
             );
         }
     }

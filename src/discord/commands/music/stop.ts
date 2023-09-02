@@ -3,7 +3,7 @@ import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '../../dialog';
 import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
 import { ScoMomCommand } from '../types';
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, GuildMember } from 'discord.js';
 
 export default {
     name: 'stop',
@@ -12,6 +12,17 @@ export default {
         .setDescription('Stop the music.. you sure?')
         .setDMPermission(false),
     async run(client, interaction) {
+        const member = interaction.member as GuildMember;
+        if (
+            AQM.getChannelId(interaction.guildId) !== member.voice?.channel.id
+        ) {
+            await interaction.reply({
+                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
+                ephemeral: true,
+            });
+            return;
+        }
+
         AQM.stop(interaction.guild.id);
         const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
             userId: interaction.member.id,
