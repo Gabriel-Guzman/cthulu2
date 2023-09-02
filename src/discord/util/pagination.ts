@@ -1,9 +1,9 @@
 import { IExtendedClient } from '@/discord/client';
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder } from 'discord.js';
 
 const pagination = async (
     interaction: CommandInteraction,
-    pages,
+    pages: EmbedBuilder[],
     client: IExtendedClient,
     emojiList = ['◀️', '⏹️', '▶️'],
     timeout = 120000,
@@ -13,13 +13,15 @@ const pagination = async (
     if (!pages) throw new Error('Pages are not given.');
 
     let page = 0;
-    const curPage = await interaction.channel.send(
-        pages[page].setFooter({
-            text: `Page ${page + 1}/${pages.length} `,
-            iconURL: interaction.member.avatar,
-            // iconURL: msg.author.displayAvatarURL(),
-        }),
-    );
+    const curPage = await interaction.channel.send({
+        embeds: [
+            pages[page].setFooter({
+                text: `Page ${page + 1}/${pages.length} `,
+                iconURL: interaction.member.avatar,
+                // iconURL: msg.author.displayAvatarURL(),
+            }),
+        ],
+    });
     for (const emoji of emojiList) await curPage.react(emoji);
     const reactionCollector = curPage.createReactionCollector({
         time: timeout,
@@ -39,12 +41,14 @@ const pagination = async (
                 page = page + 1 < pages.length ? ++page : 0;
                 break;
         }
-        curPage.edit(
-            pages[page].setFooter({
-                text: `Page ${page + 1}/${pages.length} `,
-                iconURL: interaction.user.defaultAvatarURL,
-            }),
-        );
+        curPage.edit({
+            embeds: [
+                pages[page].setFooter({
+                    text: `Page ${page + 1}/${pages.length} `,
+                    iconURL: interaction.user.defaultAvatarURL,
+                }),
+            ],
+        });
     });
     reactionCollector.on('end', () => {
         if (curPage.editable) {
