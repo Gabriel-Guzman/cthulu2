@@ -47,18 +47,20 @@ export default {
 
         const gq = AQM.queues.get(interaction.guild.id);
 
-        const list = await Promise.all(
-            AQM.list(interaction.guild.id).map(async (a) => {
+        const youtubePayloadPromises = AQM.list(interaction.guild.id).map(
+            async (a) => {
                 if (a instanceof UnsoughtYoutubePayload) {
                     return a.toYoutubePayload();
                 }
                 return a;
-            }),
+            },
         );
+
+        const list = await Promise.all(youtubePayloadPromises);
 
         const chunks = chunk(list, 10);
 
-        const pages = chunks.map((tracks) => {
+        const pages: EmbedBuilder[] = chunks.map((tracks) => {
             const SongsDescription = tracks
                 .map((t: IAudioPayload, index) => {
                     return `\`${
@@ -90,11 +92,14 @@ export default {
             return embed;
         });
 
-        if (!pages.length || pages.length === 1) {
-            await interaction.channel.send(pages[0]);
+        if (pages.length === 1) {
+            await interaction.channel.send({
+                embeds: [pages[0]],
+            });
             return;
+        } else if (!pages.length) {
+            await interaction.channel.send('queue is empty silly silly child.');
         }
         await pagination(interaction, pages, client);
-        // await interaction.reply(page);
     },
 } as ScoMomCommand<CommandInteraction>;
