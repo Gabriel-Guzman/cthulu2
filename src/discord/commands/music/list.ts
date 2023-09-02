@@ -86,7 +86,7 @@ export default {
                 )
                 .addFields({
                     name: 'queue length: ',
-                    value: (gq.payloads.length - 1).toString(),
+                    value: gq.payloads.length.toString(),
                 });
 
             return embed;
