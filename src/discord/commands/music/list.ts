@@ -56,6 +56,7 @@ export default {
             },
         );
 
+        // load unsearched youtube data for embeds
         const list = await Promise.all(youtubePayloadPromises);
 
         const chunks = chunk(list, 5);
