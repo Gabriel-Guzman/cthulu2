@@ -5,6 +5,17 @@ import Queue from './music/queue';
 import Resume from './music/resume';
 import Skip from './music/skip';
 import Stop from './music/stop';
+import List from './music/list';
 import RemoveIntro from './music/removeIntro';
 
-export default [Level, Intro, Pause, Queue, Resume, Skip, Stop, RemoveIntro];
+export default [
+    Level,
+    Intro,
+    Pause,
+    Queue,
+    Resume,
+    Skip,
+    Stop,
+    RemoveIntro,
+    List,
+];
