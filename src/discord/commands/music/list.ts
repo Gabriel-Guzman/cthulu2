@@ -58,7 +58,7 @@ export default {
 
         const list = await Promise.all(youtubePayloadPromises);
 
-        const chunks = chunk(list, 10);
+        const chunks = chunk(list, 5);
 
         const pages: EmbedBuilder[] = chunks.map((tracks) => {
             const SongsDescription = tracks
