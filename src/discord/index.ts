@@ -66,7 +66,6 @@ export default async function scoMom(): Promise<Client> {
         childClient.reportForDuty(context.client);
     }
 
-    // }
     return client;
 }
 
@@ -79,6 +78,12 @@ function registerChildEvents(context: ChildContext) {
             const command = client.clusterableCommands.get(name);
             if (!command) {
                 // it like can't happen.. messages are type safe
+                console.error(
+                    'received execute request for unknown command ',
+                    name,
+                );
+                cb('');
+                return;
             }
 
             const ep = await command.buildExecutePayload(client, payload);
@@ -90,6 +95,26 @@ function registerChildEvents(context: ChildContext) {
             }
         },
     );
+    context.childClient.socket.on(Questions.EXECUTE, async (payload, cb) => {
+        const name = payload.name;
+        const command = client.clusterableCommands.get(name);
+        if (!command) {
+            // it like can't happen.. messages are type safe
+            console.error(
+                'received execute request for unknown command ',
+                name,
+            );
+            cb({
+                success: false,
+                message: 'command not found',
+            });
+            return;
+        }
+
+        const ep = await command.buildExecutePayload(client, payload);
+        const resp = await command.execute(context, ep);
+        cb(resp);
+    });
 }
 
 function storeCommands(
