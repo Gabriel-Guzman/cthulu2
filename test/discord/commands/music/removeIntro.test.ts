@@ -45,12 +45,10 @@ describe('removeIntro', () => {
         const interaction = mockedInteraction();
 
         serverInfo.intros.set(interaction.member.id, 'youtube_url');
-        const mockedFindOne = jest
-            .spyOn(db, 'cachedFindOneOrUpsert')
-            .mockImplementation(
-                //@ts-ignore
-                (m) => (m === GuildUserInfo ? userInfo : serverInfo),
-            );
+        const mockedFindOne = jest.spyOn(db, 'findOrCreate').mockImplementation(
+            //@ts-ignore
+            (m) => (m === GuildUserInfo ? userInfo : serverInfo),
+        );
 
         const getDialogMock = jest
             .spyOn(dialog, 'getAffirmativeDialog')

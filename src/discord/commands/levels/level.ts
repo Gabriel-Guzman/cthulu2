@@ -1,19 +1,22 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
+import { findOrCreate, GuildUserInfo } from '@/db';
 import { calculateLevel, calculateXp } from '@/levels';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { ScoMomCommand } from '../types';
 
-export default {
+const command: ScoMomCommand = {
     name: 'level',
     builder: new SlashCommandBuilder()
         .setName('level')
         .setDescription('Display your current SCO level and XP')
         .setDMPermission(false),
-    async run(client, interaction: CommandInteraction): Promise<void> {
+    async shouldAttempt() {
+        return true;
+    },
+    async execute(interaction: CommandInteraction): Promise<void> {
         const member = interaction.member as GuildMember;
 
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
+        const userInfo = await findOrCreate(GuildUserInfo, {
             userId: member.id,
             guildId: interaction.guild.id,
         });
@@ -24,4 +27,6 @@ export default {
             `You're currently level ${level} with ${userInfo.xp} xp and ${xpToNextLevel} xp to next level`,
         );
     },
-} as ScoMomCommand<CommandInteraction>;
+};
+
+export default command;

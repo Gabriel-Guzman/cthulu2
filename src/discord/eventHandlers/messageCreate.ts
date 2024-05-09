@@ -1,6 +1,6 @@
 import { ChannelType, Message } from 'discord.js';
 import {
-    cachedFindOneOrUpsert,
+    findOrCreate,
     GuildUserInfo,
     IGuildUserInfo,
     IServerInfo,
@@ -38,11 +38,11 @@ async function buildCtx(message: Message) {
         };
     }
     return {
-        guildUserInfo: await cachedFindOneOrUpsert(GuildUserInfo, {
+        guildUserInfo: await findOrCreate(GuildUserInfo, {
             guildId: message.channel.guild.id,
             userId: message.author.id,
         }),
-        serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
+        serverInfo: await findOrCreate(ServerInfo, {
             guildId: message.guild.id,
         }),
         isDM: false,

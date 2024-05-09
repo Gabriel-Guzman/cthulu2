@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder } from '@discordjs/builders';
 import { AQM, IAudioPayload, UnsoughtYoutubePayload } from '@/audio/aqm';
 import { getAffirmativeDialog } from '@/discord/dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
+import { findOrCreate, GuildUserInfo } from '@/db';
 import { ScoMomCommand } from '../types';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { IExtendedClient } from '@/discord/client';
@@ -15,7 +15,7 @@ export default {
         .setName('list')
         .setDescription('Lists the songs in the queue')
         .setDMPermission(false),
-    async run(
+    async execute(
         client: IExtendedClient,
         interaction: CommandInteraction,
     ): Promise<void> {
@@ -33,7 +33,7 @@ export default {
             });
             return;
         }
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
+        const userInfo = await findOrCreate(GuildUserInfo, {
             userId: (interaction.member as GuildMember).id,
             guildId: interaction.guild.id,
         });

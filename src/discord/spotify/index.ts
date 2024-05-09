@@ -1,17 +1,18 @@
 import SpotifyWebApi from 'spotify-web-api-node';
-import Memory from '@/memory';
+import { Context } from '@/discord';
 
-function tokenCacheKey(): string {
-    return `spotify_access_token`;
-}
+const SPOTIFY_CACHE_KEY = 'spotify_access_token';
 
-export async function confirmCredentials(spotifyInstance): Promise<void> {
-    const token = Memory.get(tokenCacheKey());
+export async function confirmCredentials(
+    ctx: Context,
+    spotifyInstance,
+): Promise<void> {
+    const token = ctx.redis.get(SPOTIFY_CACHE_KEY);
     if (!token) {
         console.debug('refreshing credentials');
         const data = await spotifyInstance.clientCredentialsGrant();
-        await Memory.writeWithTTL(
-            tokenCacheKey(),
+        await ctx.redis.writeWithTTL(
+            SPOTIFY_CACHE_KEY,
             token,
             data.body.expires_in * 1000,
         );

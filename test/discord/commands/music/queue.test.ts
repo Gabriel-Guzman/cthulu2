@@ -54,7 +54,7 @@ describe('queue.run', () => {
         };
 
         // @ts-ignore
-        await queue.run(member, interaction);
+        await queue.runAsMother(member, interaction);
         expect(interaction.isChatInputCommand).toHaveBeenCalledTimes(1);
         expect(interaction.options.getString).toHaveBeenCalledTimes(1);
         expect(interaction.options.getString).toHaveBeenCalledWith('query');
@@ -97,7 +97,7 @@ describe('queue.run', () => {
             );
 
         const findOneSpy = jest
-            .spyOn(db, 'cachedFindOneOrUpsert')
+            .spyOn(db, 'findOrCreate')
             // @ts-ignore
             .mockImplementationOnce(async () => ({
                 guildId: '123',
@@ -111,7 +111,7 @@ describe('queue.run', () => {
             .mockImplementation(() => 'asdfalkjsdf');
 
         // @ts-ignore
-        await queue.run(undefined, interaction);
+        await queue.runAsMother(undefined, interaction);
 
         expect(findOneSpy).toHaveBeenCalledTimes(2);
         expect(buildPayloadSpy).toHaveBeenCalledWith('happy', member.id);

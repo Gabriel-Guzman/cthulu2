@@ -2,11 +2,15 @@
 
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { getAffirmativeDialog } from '../../dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
+import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
 import { ScoMomCommand } from '../types';
-import { CommandInteraction } from 'discord.js';
+import {
+    ChatInputCommandInteraction,
+    GuildMember,
+    InteractionType,
+} from 'discord.js';
 
 function isValidHttpUrl(string): boolean {
     let url;
@@ -46,25 +50,36 @@ export default {
                 .setDescription('the youtube link to play when you join voice')
                 .setRequired(true),
         ),
-    async run(client, interaction) {
+    async execute(client, interaction) {
+        if (!(interaction.type === InteractionType.ApplicationCommand)) {
+            return;
+        }
+
+        if (!interaction.isChatInputCommand()) {
+            return;
+        }
+
+        const member = <GuildMember>interaction.member;
+
         const url = interaction.options.getString('link');
-        const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
+        const serverInfo = await findOrCreate(ServerInfo, {
             guildId: interaction.guild.id,
         });
         if (!serverInfo.intros) {
             serverInfo.intros = new Map();
         }
         if (!(await isRealYoutubeUrl(url))) {
-            return interaction.reply("i don't think that's a valid link...");
+            await interaction.reply("i don't think that's a valid link...");
+            return;
         }
-        serverInfo.intros.set(interaction.member.id, url);
+        serverInfo.intros.set(member.id, url);
         await serverInfo.save();
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-            userId: interaction.member.id,
+        const userInfo = await findOrCreate(GuildUserInfo, {
+            userId: member.id,
             guildId: interaction.guild.id,
         });
-        return interaction.reply(
-            getAffirmativeDialog('intro', interaction.member, userInfo),
+        await interaction.reply(
+            getAffirmativeDialog('intro', member, userInfo),
         );
     },
-} as ScoMomCommand<CommandInteraction>;
+} as ScoMomCommand<ChatInputCommandInteraction>;

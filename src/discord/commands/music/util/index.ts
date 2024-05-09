@@ -10,6 +10,7 @@ import Search from '@/audio/search';
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
 import ytdl from 'ytdl-core';
 import Spotify, { confirmCredentials } from '@/discord/spotify';
+import { Context } from '@/discord';
 
 function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     try {
@@ -19,6 +20,7 @@ function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     }
 }
 
+// Returns true if this bot is in channel channelId, flalse otherwise
 export function voiceChannelRestriction(
     guildId: string,
     channelId: string,
@@ -33,9 +35,10 @@ export function voiceChannelRestriction(
 }
 
 export async function buildPayload(
+    ctx: Context,
     query: string,
     requestedBy: string,
-): Promise<Payload> {
+): Promise<Array<Payload>> {
     const firstWord = query.trim().split(' ')[0];
     const fullArgs = query;
 
@@ -46,7 +49,7 @@ export async function buildPayload(
     const spotify = Spotify();
 
     if (parsed) {
-        await confirmCredentials(spotify);
+        await confirmCredentials(ctx, spotify);
 
         switch (parsed.type) {
             case 'track':
@@ -62,17 +65,28 @@ export async function buildPayload(
                 if (!result || result.length === 0) {
                     throw new Error("i couldn't find that on youtube :(");
                 }
-                return new YoutubePayload(
-                    result[0].link,
-                    result[0].title,
-                    requestedBy,
-                    result[0].thumbnails.default,
-                );
+                return [
+                    new YoutubePayload(
+                        result[0].link,
+                        result[0].title,
+                        requestedBy,
+                        result[0].thumbnails.default,
+                    ),
+                ];
             case 'playlist':
                 const castedPlaylist = parsed as Playlist;
-                const playlistResp = await spotify.getPlaylist(
-                    castedPlaylist.id,
-                );
+                const playlistResp: {
+                    body: {
+                        tracks: {
+                            items: Array<{
+                                track: {
+                                    name: string;
+                                    artists: Array<{ name: string }>;
+                                };
+                            }>;
+                        };
+                    };
+                } = await spotify.getPlaylist(castedPlaylist.id);
 
                 const playlist = playlistResp.body;
                 const queries = playlist.tracks.items.map(
@@ -86,7 +100,14 @@ export async function buildPayload(
                 );
             case 'album':
                 const castedAlbum = parsed as Album;
-                const albumResp = await spotify.getAlbumTracks(castedAlbum.id);
+                const albumResp: {
+                    body: {
+                        items: Array<{
+                            name: string;
+                            artists: Array<{ name: string }>;
+                        }>;
+                    };
+                } = await spotify.getAlbumTracks(castedAlbum.id);
 
                 const album = albumResp.body;
                 const albumQueries = album.items.map(
@@ -112,22 +133,26 @@ export async function buildPayload(
             if (!result || result.length === 0) {
                 throw new Error("i couldn't find that on youtube :(");
             }
-            return new YoutubePayload(
-                result[0].link,
-                result[0].title,
-                requestedBy,
-                result[0].thumbnails.default,
-            );
+            return [
+                new YoutubePayload(
+                    result[0].link,
+                    result[0].title,
+                    requestedBy,
+                    result[0].thumbnails.default,
+                ),
+            ];
         } else {
             const songInfo = await ytdl.getInfo(
                 firstWord.replace('https://', 'http://'),
             );
-            return new YoutubePayload(
-                songInfo.videoDetails.video_url,
-                songInfo.videoDetails.title,
-                requestedBy,
-                songInfo.thumbnail_url,
-            );
+            return [
+                new YoutubePayload(
+                    songInfo.videoDetails.video_url,
+                    songInfo.videoDetails.title,
+                    requestedBy,
+                    songInfo.thumbnail_url,
+                ),
+            ];
         }
     }
 }

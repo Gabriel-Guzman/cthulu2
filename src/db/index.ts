@@ -1,5 +1,5 @@
 import mongoose, { HydratedDocument, Model } from 'mongoose';
-import Memory from '@/memory';
+import IPM from '@/memory';
 
 export default function () {
     return mongoose.connect(process.env.MONGODB_URI).then(() => {
@@ -77,6 +77,14 @@ const serverInfoSchema = new mongoose.Schema<IServerInfo>({
     acceptRules: acceptRulesSchema,
 });
 
+serverInfoSchema.pre('save', async function () {
+    try {
+        removeFromCache(ServerInfo, this);
+    } catch (e) {
+        console.error(e);
+    }
+});
+
 export interface IGuildUserInfo {
     userId: string;
     guildId: string;
@@ -103,6 +111,14 @@ const guildUserInfoSchema = new mongoose.Schema<IGuildUserInfo>({
     },
 });
 
+guildUserInfoSchema.pre('save', async function () {
+    try {
+        removeFromCache(GuildUserInfo, this);
+    } catch (e) {
+        console.error(e);
+    }
+});
+
 const YoutubeStats = mongoose.model('YouTubeStats', youtubeStatsSchema);
 const Profanity = mongoose.model('Profanity', profanitySchema);
 const ServerInfo = mongoose.model<IServerInfo>('ServerInfo', serverInfoSchema);
@@ -124,22 +140,24 @@ keyGens.set(
 );
 keyGens.set(ServerInfo, ({ guildId }: IServerInfo) => `server_info_${guildId}`);
 
-export async function cachedFindOneOrUpsert<TQuery extends IModels>(
+const Memory = new IPM<string, HydratedDocument<IModels>>();
+
+export async function findOrCreate<TQuery extends IModels>(
     model: Model<TQuery>,
     opts: Partial<TQuery>,
 ): Promise<HydratedDocument<TQuery>> {
-    const gen = keyGens.get(model);
-    if (!gen) {
-        throw new Error(
-            'cachedFindOneOrUpsert called on model with no key generator',
-        );
-    }
-    const key = gen(opts);
-    let res = await _cachedFindOne(key, model, opts);
+    // const gen = keyGens.get(model);
+    // if (!gen) {
+    //     throw new Error(
+    //         'cachedFindOneOrUpsert called on model with no key generator',
+    //     );
+    // }
+    // const key = gen(opts);
+    let res = await model.findOne(opts);
     if (res) return res;
 
     res = await model.create(opts);
-    await Memory.writeWithTTL(key, res);
+    // await Memory.writeWithTTL(key, res);
     return res;
 }
 
@@ -155,12 +173,12 @@ export async function cachedFindOne<T extends IModels>(
     return _cachedFindOne(key, model, opts);
 }
 
-async function _cachedFindOne<T extends IModels>(
+async function _cachedFindOne<T extends IModels, H extends HydratedDocument<T>>(
     key: string,
     model: Model<T>,
     opts: Partial<T>,
-): Promise<HydratedDocument<T> | void> {
-    let res = Memory.get(key);
+): Promise<H | void> {
+    let res = <H>Memory.get(key);
     if (res) return res;
 
     res = await model.findOne(opts);

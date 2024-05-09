@@ -3,7 +3,7 @@ import { VoiceChannel, VoiceState } from 'discord.js';
 import { getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
 import { AQM, YoutubePayload } from '@/audio/aqm';
 import { HydratedDocument } from 'mongoose';
-import { cachedFindOneOrUpsert, IServerInfo, ServerInfo } from '@/db';
+import { findOrCreate, IServerInfo, ServerInfo } from '@/db';
 
 async function lonely(
     ctx: VoiceStateUpdateCtx,
@@ -90,7 +90,7 @@ export default async function handleVoiceStateUpdate(
 ): Promise<void> {
     if (oldState.member.user.bot) return;
     const ctx: VoiceStateUpdateCtx = {
-        serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
+        serverInfo: await findOrCreate(ServerInfo, {
             guildId: newState.guild?.id || oldState.guild?.id,
         }),
     };

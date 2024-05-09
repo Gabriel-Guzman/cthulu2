@@ -1,23 +1,58 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '../../dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
+import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
 import {
-    BaseInteraction,
-    CommandInteraction,
+    ChatInputCommandInteraction,
     GuildMember,
     InteractionType,
     VoiceChannel,
 } from 'discord.js';
-import { ScoMomCommand } from '../types';
+import { ClusterableCommand } from '../types';
 import {
     buildPayload,
     voiceChannelRestriction,
 } from '@/discord/commands/music/util';
+import { buildChildNodeResponse } from '@/cluster/child';
+import {
+    APIBasePayload,
+    BasePayload,
+    baseToCluster,
+} from '@/discord/commands/payload';
 
-export default {
+// socket io payload
+interface MinimumPayload extends APIBasePayload {
+    query: string;
+}
+
+interface ExecutePayload extends BasePayload {
+    query: string;
+}
+
+const command: ClusterableCommand<
+    ChatInputCommandInteraction,
+    ExecutePayload,
+    MinimumPayload
+> = {
+    async buildClusterPayload(
+        payload: ExecutePayload,
+    ): Promise<MinimumPayload> {
+        return {
+            ...baseToCluster(payload),
+            query: payload.query,
+        };
+    },
+    async buildExecutePayload(client, payload): Promise<ExecutePayload> {
+        const guild = await client.guilds.fetch(payload.guildId);
+        const member = await guild.members.fetch(payload.memberId);
+        return {
+            guild,
+            member,
+            query: payload.query,
+        };
+    },
     name: 'queue',
     builder: new SlashCommandBuilder()
         .setName('queue')
@@ -31,7 +66,71 @@ export default {
                     "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'",
                 ),
         ),
-    async run(client, interaction: BaseInteraction): Promise<void> {
+    async canExecute(ctx, payload): Promise<boolean> {
+        const { guild, member } = payload;
+        return voiceChannelRestriction(guild.id, member.voice?.channel.id);
+    },
+    async execute(ctx, payload) {
+        try {
+            const audioPayload = await buildPayload(
+                ctx,
+                payload.query,
+                payload.member.id,
+            );
+
+            const { guild, member } = payload;
+            let textChannel;
+            const serverInfo = await findOrCreate(ServerInfo, {
+                guildId: guild.id,
+            });
+            if (
+                serverInfo.botReservedTextChannels &&
+                serverInfo.botReservedTextChannels.length
+            ) {
+                textChannel = await guild.channels.fetch(
+                    serverInfo.botReservedTextChannels[0],
+                );
+            }
+
+            for (const payload of audioPayload) {
+                await AQM.queue(
+                    member.voice.channel as VoiceChannel,
+                    textChannel,
+                    payload,
+                );
+            }
+
+            const userInfo = await findOrCreate(GuildUserInfo, {
+                userId: member.id,
+                guildId: guild.id,
+            });
+
+            return buildChildNodeResponse(
+                true,
+                getAffirmativeDialog('queue', member, userInfo),
+            );
+        } catch (e) {
+            console.error(e);
+            if (e.body && e.body.error && e.body.error.status === 404) {
+                return buildChildNodeResponse(false, 'not found :(');
+            }
+            return buildChildNodeResponse(
+                false,
+                'error queueing song: ' + e.message,
+            );
+        }
+    },
+
+    async buildPayloadFromInteraction(interaction) {
+        const query = interaction.options.getString('query');
+        const payload: ExecutePayload = {
+            guild: interaction.guild,
+            member: interaction.member as GuildMember,
+            query,
+        };
+        return payload;
+    },
+    async shouldAttempt(interaction): Promise<boolean> {
         if (!(interaction.type === InteractionType.ApplicationCommand)) {
             return;
         }
@@ -40,8 +139,7 @@ export default {
             return;
         }
 
-        const query = interaction.options.getString('query');
-        const member = <GuildMember>interaction.member;
+        const member = interaction.member as GuildMember;
         const voiceChannel = member.voice.channel;
 
         if (!voiceChannel) {
@@ -51,60 +149,7 @@ export default {
             });
             return;
         }
-
-        if (
-            !member.voice ||
-            !voiceChannelRestriction(
-                interaction.guildId,
-                member.voice?.channel.id,
-            )
-        ) {
-            await interaction.reply({
-                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
-                ephemeral: true,
-            });
-            return;
-        }
-
-        try {
-            const payload = await buildPayload(query, member.id);
-
-            let textChannel;
-            const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
-                guildId: interaction.guild.id,
-            });
-            if (
-                serverInfo.botReservedTextChannels &&
-                serverInfo.botReservedTextChannels.length
-            ) {
-                textChannel = await interaction.guild.channels.fetch(
-                    serverInfo.botReservedTextChannels[0],
-                );
-            }
-
-            await AQM.queue(voiceChannel as VoiceChannel, textChannel, payload);
-
-            const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-                userId: member.id,
-                guildId: interaction.guild.id,
-            });
-            await interaction.reply(
-                getAffirmativeDialog('queue', member, userInfo),
-            );
-            return;
-        } catch (e) {
-            console.error(e);
-            if (e.body && e.body.error && e.body.error.status === 404) {
-                await interaction.reply({
-                    content: 'not found :(',
-                    ephemeral: true,
-                });
-                return;
-            }
-            await interaction.reply({
-                content: 'error queueing song: ' + e.message,
-            });
-            return;
-        }
     },
-} as ScoMomCommand<CommandInteraction>;
+};
+
+export default command;

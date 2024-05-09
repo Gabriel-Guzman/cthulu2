@@ -1,18 +1,41 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '../../dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
-import { ScoMomCommand } from '../types';
+import { findOrCreate, GuildUserInfo } from '@/db';
+import { ClusterableCommand } from '../types';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { voiceChannelRestriction } from '@/discord/commands/music/util';
+import {
+    baseToCluster,
+    clusterToBase,
+    interactionToBase,
+} from '@/discord/commands/payload';
 
-export default {
+const command: ClusterableCommand<CommandInteraction> = {
+    async buildClusterPayload(payload) {
+        return baseToCluster(payload);
+    },
+    buildPayloadFromInteraction(interaction) {
+        return interactionToBase(interaction);
+    },
+    buildExecutePayload(client, payload) {
+        return clusterToBase(client, payload);
+    },
+    canExecute(client, param): Promise<boolean> {
+        return Promise.resolve(false);
+    },
     name: 'resume',
     builder: new SlashCommandBuilder()
         .setName('resume')
         .setDescription('Unpause the music!')
         .setDMPermission(false),
-    async run(client, interaction) {
+    async shouldAttempt(interaction) {
+        // if (!(interaction.type === InteractionType.ApplicationCommand)) {
+        //     return false;
+        // }
+        if (!interaction.isChatInputCommand()) {
+            return;
+        }
         const member = <GuildMember>interaction.member;
         if (
             !member.voice ||
@@ -25,16 +48,23 @@ export default {
                 content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
                 ephemeral: true,
             });
-            return;
+            return false;
         }
+        return true;
+    },
+    async execute(ctx, interaction) {
+        const member = <GuildMember>interaction.member;
 
         AQM.resume(interaction.guild.id);
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-            userId: interaction.member.id,
+        const userInfo = await findOrCreate(GuildUserInfo, {
+            userId: member.id,
             guildId: interaction.guild.id,
         });
-        return interaction.reply(
-            getAffirmativeDialog('resume', interaction.member, userInfo),
-        );
+        return {
+            success: true,
+            message: getAffirmativeDialog('resume', member, userInfo),
+        };
     },
-} as ScoMomCommand<CommandInteraction>;
+};
+
+export default command;

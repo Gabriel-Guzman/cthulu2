@@ -11,11 +11,13 @@ import RemoveIntro from './music/removeIntro';
 export default [
     Level,
     Intro,
-    Pause,
-    Queue,
-    Resume,
-    Skip,
-    Stop,
+    // Pause,
+    // Queue,
+    // Resume,
+    // Skip,
+    // Stop,
     RemoveIntro,
     List,
 ];
+
+export const clusterableCommands = [Pause, Queue, Resume, Skip, Stop];

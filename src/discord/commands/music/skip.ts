@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '@/discord/dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
+import { findOrCreate, GuildUserInfo } from '@/db';
 import { ScoMomCommand } from '../types';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { voiceChannelRestriction } from '@/discord/commands/music/util';
@@ -12,7 +12,7 @@ export default {
         .setName('skip')
         .setDescription('Skip the current song')
         .setDMPermission(false),
-    async run(client, interaction: CommandInteraction) {
+    async execute(client, interaction: CommandInteraction) {
         const member = interaction.member as GuildMember;
         if (
             !member.voice ||
@@ -29,7 +29,7 @@ export default {
         }
 
         AQM.skip(interaction.guild.id);
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
+        const userInfo = await findOrCreate(GuildUserInfo, {
             userId: (interaction.member as GuildMember).id,
             guildId: interaction.guild.id,
         });
