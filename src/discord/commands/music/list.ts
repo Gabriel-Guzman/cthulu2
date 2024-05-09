@@ -4,7 +4,6 @@ import { getAffirmativeDialog } from '@/discord/dialog';
 import { findOrCreate, GuildUserInfo } from '@/db';
 import { ScoMomCommand } from '../types';
 import { CommandInteraction, GuildMember } from 'discord.js';
-import { IExtendedClient } from '@/discord/client';
 import chunk from 'lodash/chunk';
 import pagination from '@/discord/util/pagination';
 import { voiceChannelRestriction } from '@/discord/commands/music/util';
@@ -15,10 +14,7 @@ export default {
         .setName('list')
         .setDescription('Lists the songs in the queue')
         .setDMPermission(false),
-    async execute(
-        client: IExtendedClient,
-        interaction: CommandInteraction,
-    ): Promise<void> {
+    async shouldAttempt(interaction: CommandInteraction): Promise<boolean> {
         const member = interaction.member as GuildMember;
         if (
             !member.voice ||
@@ -33,6 +29,12 @@ export default {
             });
             return;
         }
+    },
+
+    async execute(
+        // client: IExtendedClient,
+        interaction: CommandInteraction,
+    ): Promise<void> {
         const userInfo = await findOrCreate(GuildUserInfo, {
             userId: (interaction.member as GuildMember).id,
             guildId: interaction.guild.id,
@@ -76,7 +78,7 @@ export default {
                 // .setAuthor('Queue', client.application.iconURL())
                 .setAuthor({
                     name: 'Queue',
-                    iconURL: client.application.iconURL(),
+                    iconURL: interaction.client.application.iconURL(),
                 })
                 .setDescription(
                     `**currently playing:** \n[${gq
@@ -102,6 +104,6 @@ export default {
             await interaction.channel.send('queue is empty silly silly child.');
             return;
         }
-        await pagination(interaction, pages, client);
+        await pagination(interaction, pages, interaction.client);
     },
-} as ScoMomCommand<CommandInteraction>;
+} as ScoMomCommand;

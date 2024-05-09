@@ -1,7 +1,6 @@
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import {
-    APIExecutePayload,
     ClientToServerEvents,
     InterServerEvents,
     Questions,
@@ -11,6 +10,7 @@ import {
 import { ChildNodeResponse } from '@/discord/commands/types';
 import { InteractionCreateCtx } from '@/discord/eventHandlers/interactionCreate';
 import { lock } from '@/helpers/locks';
+import { APIBasePayload } from '@/discord/commands/payload';
 //
 // enum ConversationStatuses {
 //     IDLE,
@@ -47,7 +47,7 @@ export class ClusterMotherManager {
             console.log('new socket connection' + socket.id);
             // socket.emitWithAck('can_execute');
 
-            socket.on(Questions.REGISTER, (clientId) => {
+            socket.on(Questions.REPORT_TO_MOM, (clientId) => {
                 socket.join(clientId);
             });
         });
@@ -56,14 +56,17 @@ export class ClusterMotherManager {
     // sends command to a random child
     async delegate(
         ctx: InteractionCreateCtx,
-        command: string,
-        payload: APIExecutePayload,
+        commandName: string,
+        payload: APIBasePayload,
     ): Promise<DelegationResponse> {
         // need to lock
         const release = await lock(ctx.redis, payload.guildId);
         const responses = await this.io
             .timeout(3000)
-            .emitWithAck(Questions.CAN_EXECUTE, payload);
+            .emitWithAck(Questions.CAN_EXECUTE, {
+                ...payload,
+                name: commandName,
+            });
 
         const yesIds = responses.filter((response) => response.length);
         if (!yesIds.length) {
@@ -78,7 +81,10 @@ export class ClusterMotherManager {
         const [res] = await this.io
             .to(randomNode)
             .timeout(3000)
-            .emitWithAck(Questions.EXECUTE, payload);
+            .emitWithAck(Questions.EXECUTE, {
+                ...payload,
+                name: commandName,
+            });
         release();
         return {
             ...res,

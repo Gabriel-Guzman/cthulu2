@@ -6,11 +6,7 @@ import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
 import { ScoMomCommand } from '../types';
-import {
-    ChatInputCommandInteraction,
-    GuildMember,
-    InteractionType,
-} from 'discord.js';
+import { GuildMember, InteractionType } from 'discord.js';
 
 function isValidHttpUrl(string): boolean {
     let url;
@@ -82,4 +78,4 @@ export default {
             getAffirmativeDialog('intro', member, userInfo),
         );
     },
-} as ScoMomCommand<ChatInputCommandInteraction>;
+} as ScoMomCommand;

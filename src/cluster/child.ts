@@ -20,7 +20,7 @@ export class ChildSocketManager {
     }
 
     reportForDuty(client: IExtendedClient) {
-        this.socket.emit(Questions.REGISTER, client.user.id);
+        this.socket.emit(Questions.REPORT_TO_MOM, client.user.id);
     }
 }
 

@@ -79,7 +79,7 @@ function registerChildEvents(context: ChildContext) {
             if (!command) {
                 // it like can't happen.. messages are type safe
                 console.error(
-                    'received execute request for unknown command ',
+                    'received can_execute request for unknown command ',
                     name,
                 );
                 cb('');

@@ -298,28 +298,28 @@ class GuildQueue {
 class AudioQueueManager {
     queues = new Map<string, GuildQueue>();
 
-    stop(guildId): void {
+    stop(guildId: string): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.stop();
         }
     }
 
-    pause(guildId): void {
+    pause(guildId: string): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.pause();
         }
     }
 
-    resume(guildId): void {
+    resume(guildId: string): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.resume();
         }
     }
 
-    skip(guildId): void {
+    skip(guildId: string): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.skip();

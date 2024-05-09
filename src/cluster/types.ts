@@ -2,10 +2,9 @@ import { APIBasePayload } from '@/discord/commands/payload';
 import { ChildNodeResponse } from '@/discord/commands/types';
 
 export enum Questions {
-    HEARTBEAT = 'heartbeat',
     CAN_EXECUTE = 'can_execute',
     EXECUTE = 'execute',
-    REGISTER = 'register',
+    REPORT_TO_MOM = 'mom_you_called?',
 }
 
 export type APIExecutePayload = {
@@ -25,7 +24,7 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-    [Questions.REGISTER]: (clientId: string) => void;
+    [Questions.REPORT_TO_MOM]: (clientId: string) => void;
 }
 
 export interface InterServerEvents {}

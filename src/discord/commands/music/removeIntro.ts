@@ -4,12 +4,7 @@ import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
 import { ScoMomCommand } from '../types';
-import {
-    CommandInteraction,
-    GuildMember,
-    Interaction,
-    InteractionType,
-} from 'discord.js';
+import { GuildMember, Interaction, InteractionType } from 'discord.js';
 
 export default {
     name: 'remove intro',
@@ -17,7 +12,7 @@ export default {
         .setName('remove-intro')
         .setDescription('Remove your intro music. Cannot be undone.')
         .setDMPermission(false),
-    async execute(client, interaction: Interaction) {
+    async execute(interaction: Interaction) {
         if (
             !interaction.isChatInputCommand() ||
             !(interaction.type === InteractionType.ApplicationCommand)
@@ -42,4 +37,4 @@ export default {
             getAffirmativeDialog('removeIntro', member, userInfo),
         );
     },
-} as ScoMomCommand<CommandInteraction>;
+} as ScoMomCommand;

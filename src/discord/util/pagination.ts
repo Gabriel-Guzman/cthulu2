@@ -1,10 +1,9 @@
-import { IExtendedClient } from '@/discord/client';
-import { CommandInteraction, EmbedBuilder } from 'discord.js';
+import { Client, CommandInteraction, EmbedBuilder } from 'discord.js';
 
 const pagination = async (
     interaction: CommandInteraction,
     pages: EmbedBuilder[],
-    client: IExtendedClient,
+    client: Client,
     emojiList = ['◀️', '⏹️', '▶️'],
     timeout = 120000,
 ) => {
