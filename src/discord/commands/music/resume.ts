@@ -21,8 +21,11 @@ const command: ClusterableCommand<CommandInteraction> = {
     buildExecutePayload(client, payload) {
         return clusterToBase(client, payload);
     },
-    canExecute(client, param): Promise<boolean> {
-        return Promise.resolve(false);
+    async canExecute(client, payload) {
+        return voiceChannelRestriction(
+            payload.guild.id,
+            payload.member.voice?.channel.id,
+        );
     },
     name: 'resume',
     builder: new SlashCommandBuilder()
@@ -30,9 +33,6 @@ const command: ClusterableCommand<CommandInteraction> = {
         .setDescription('Unpause the music!')
         .setDMPermission(false),
     async shouldAttempt(interaction) {
-        // if (!(interaction.type === InteractionType.ApplicationCommand)) {
-        //     return false;
-        // }
         if (!interaction.isChatInputCommand()) {
             return;
         }

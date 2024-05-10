@@ -1,20 +1,16 @@
 import { IExtendedClient } from '../client';
 import { VoiceChannel, VoiceState } from 'discord.js';
-import { getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
+import { getVoiceConnection } from '@discordjs/voice';
 import { AQM, YoutubePayload } from '@/audio/aqm';
 import { HydratedDocument } from 'mongoose';
 import { findOrCreate, IServerInfo, ServerInfo } from '@/db';
 
-async function lonely(
-    ctx: VoiceStateUpdateCtx,
+export async function lonely(
     oldState: VoiceState,
     newState: VoiceState,
 ): Promise<void> {
     const voiceChannelId = newState.channelId;
-    const guildId = newState.guild.id;
-    if (!newState.channelId) {
-        return;
-    }
+    const guildId = oldState.guild.id || newState.guild.id;
     if (newState.member.user.bot) {
         return;
     }
@@ -37,19 +33,8 @@ async function lonely(
     // if no one else is with us
     if (membersInCurrentChannel === 1) {
         // kill voice connection and queue
+        await AQM.stop(guildId);
         voiceConnection.disconnect();
-
-        const newChannel = await newState.guild.channels.fetch(voiceChannelId);
-        if (newChannel.name.toLowerCase().includes('afk')) {
-            return;
-        }
-        // join new one
-        joinVoiceChannel({
-            channelId: voiceChannelId,
-            guildId: guildId,
-            // @ts-ignore
-            adapterCreator: newState.guild.voiceAdapterCreator,
-        });
     }
 }
 
@@ -95,7 +80,7 @@ export default async function handleVoiceStateUpdate(
         }),
     };
     await Promise.all([
-        // lonely(ctx, oldState, newState),
+        lonely(oldState, newState),
         intro(ctx, oldState, newState),
     ]);
 }

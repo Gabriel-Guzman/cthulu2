@@ -28,7 +28,7 @@
         "dev": "NODE_DEV=true NODE_PATH=src/ ts-node-dev -r tsconfig-paths/register --transpile-only index.ts",
         "commands:deploy": "NODE_DEV=true ts-node-dev -r tsconfig-paths/register --transpile-only scripts/deployCommands.ts",
         "dev:node": "tsc && NODE_DEV=true NODE_PATH=src/ node ./dist/index.js",
-        "test": "jest",
+        "test": "tsc && jest",
         "pretty-quick": "pretty-quick --staged --ignore-path=.prettierignore",
         "prettier": "prettier ./ -w",
         "prepare": "husky install"

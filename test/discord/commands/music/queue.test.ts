@@ -1,9 +1,17 @@
 import queue from '@/discord/commands/music/queue';
 import * as aqm from '@/audio/aqm';
 import * as db from '@/db';
+import { IGuildUserInfo, IServerInfo } from '@/db';
 import * as utils from '@/discord/commands/music/util';
 import * as dialog from '@/discord/dialog';
-import { InteractionType } from 'discord.js';
+import {
+    CommandInteraction,
+    Guild,
+    GuildMember,
+    InteractionType,
+} from 'discord.js';
+import { HydratedDocument } from 'mongoose';
+import { Context } from '@/discord';
 
 const mockedInteraction = () => {
     const member = {
@@ -52,12 +60,8 @@ describe('queue.run', () => {
                 },
             },
         };
-
-        // @ts-ignore
-        await queue.runAsMother(member, interaction);
+        await queue.shouldAttempt(interaction as unknown as CommandInteraction);
         expect(interaction.isChatInputCommand).toHaveBeenCalledTimes(1);
-        expect(interaction.options.getString).toHaveBeenCalledTimes(1);
-        expect(interaction.options.getString).toHaveBeenCalledWith('query');
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({
                 content: expect.anything(),
@@ -65,7 +69,7 @@ describe('queue.run', () => {
             }),
         );
     });
-    it('should queue the music and tell the user', async () => {
+    it('should queue the music', async () => {
         const member = {
             id: 'member_id',
             voice: { channel: { id: 'voice_channel_id' } },
@@ -91,32 +95,42 @@ describe('queue.run', () => {
 
         const buildPayloadSpy = jest
             .spyOn(utils, 'buildPayload')
-            .mockImplementation(
-                async () =>
-                    new aqm.YoutubePayload('url', 'title', member.id, ''),
-            );
+            .mockImplementation(async () => [
+                new aqm.YoutubePayload('url', 'title', member.id, ''),
+            ]);
 
         const findOneSpy = jest
             .spyOn(db, 'findOrCreate')
-            // @ts-ignore
-            .mockImplementationOnce(async () => ({
-                guildId: '123',
-            }))
-
-            // @ts-ignore
-            .mockImplementationOnce(async () => ({ userId: '123' }));
+            .mockImplementationOnce(
+                async () =>
+                    ({
+                        guildId: '123',
+                    } as unknown as Promise<HydratedDocument<IServerInfo>>),
+            )
+            .mockImplementationOnce(
+                async () =>
+                    ({ userId: '123' } as unknown as Promise<
+                        HydratedDocument<IGuildUserInfo>
+                    >),
+            );
 
         const dialogSpy = jest
             .spyOn(dialog, 'getAffirmativeDialog')
             .mockImplementation(() => 'asdfalkjsdf');
 
-        // @ts-ignore
-        await queue.runAsMother(undefined, interaction);
+        await queue.execute(undefined as unknown as Context, {
+            member: member as unknown as GuildMember,
+            guild: interaction.guild as unknown as Guild,
+            query: 'happy',
+        });
 
         expect(findOneSpy).toHaveBeenCalledTimes(2);
-        expect(buildPayloadSpy).toHaveBeenCalledWith('happy', member.id);
+        expect(buildPayloadSpy).toHaveBeenCalledWith(
+            undefined,
+            'happy',
+            member.id,
+        );
         expect(aqmQueueSpy).toHaveBeenCalledTimes(1);
-        expect(interaction.reply).toHaveBeenCalledTimes(1);
         expect(dialogSpy).toHaveBeenCalledTimes(1);
         expect(dialogSpy).toHaveBeenCalledWith('queue', interaction.member, {
             userId: '123',

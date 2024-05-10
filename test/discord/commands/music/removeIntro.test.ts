@@ -1,8 +1,9 @@
 import * as db from '@/db';
-import { GuildUserInfo, ServerInfo } from '@/db';
+import { GuildUserInfo, IModels, ServerInfo } from '@/db';
 import * as dialog from '@/discord/dialog';
 import removeIntro from '@/discord/commands/music/removeIntro';
-import { InteractionType } from 'discord.js';
+import { CommandInteraction, InteractionType } from 'discord.js';
+import { HydratedDocument } from 'mongoose';
 
 afterAll(() => {
     jest.restoreAllMocks();
@@ -45,10 +46,14 @@ describe('removeIntro', () => {
         const interaction = mockedInteraction();
 
         serverInfo.intros.set(interaction.member.id, 'youtube_url');
-        const mockedFindOne = jest.spyOn(db, 'findOrCreate').mockImplementation(
-            //@ts-ignore
-            (m) => (m === GuildUserInfo ? userInfo : serverInfo),
-        );
+        const mockedFindOne = jest
+            .spyOn(db, 'findOrCreate')
+            .mockImplementation(
+                async (m) =>
+                    (m === GuildUserInfo
+                        ? userInfo
+                        : serverInfo) as HydratedDocument<IModels>,
+            );
 
         const getDialogMock = jest
             .spyOn(dialog, 'getAffirmativeDialog')
@@ -57,8 +62,7 @@ describe('removeIntro', () => {
         // const findOne = jest.spyOn(db, "cachedFindOneOrUpsert")
         interaction.isApplicationCommand.mockReturnValueOnce(true);
         interaction.isChatInputCommand.mockReturnValueOnce(true);
-        //@ts-ignore
-        await removeIntro.run(undefined, interaction);
+        await removeIntro.execute(interaction as unknown as CommandInteraction);
 
         expect(mockedFindOne).toHaveBeenNthCalledWith(1, ServerInfo, {
             guildId: interaction.guild.id,

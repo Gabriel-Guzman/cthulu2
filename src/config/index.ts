@@ -1,4 +1,3 @@
-// type role = 'CHILD' | 'MOTHER';
 export enum ClusteringRole {
     CHILD = 'CHILD',
     MOTHER = 'MOTHER',

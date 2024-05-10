@@ -36,5 +36,3 @@ export default {
         });
     },
 };
-
-// export default new Search(process.env.YOUTUBE_API_KEY, 10);

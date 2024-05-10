@@ -19,24 +19,6 @@ class ExtendedClient extends Client {
     }
 }
 
-// export class MotherClient extends ExtendedClient {
-//     clusterMother: ClusterMotherManager;
-//     constructor(opts, server: ClusterMotherManager, redis: RedisClientType) {
-//         super(opts, redis);
-//         this.clusterMother = server;
-//     }
-// }
-//
-// export class ChildClient extends ExtendedClient {
-//     clusterMother: false;
-//     childSocketManager: ChildSocketManager;
-//     constructor(opts, childSocketManager: ChildSocketManager) {
-//         super(opts);
-//         this.clusterMother = false;
-//         this.childSocketManager = childSocketManager;
-//     }
-// }
-
 export type IExtendedClient = ExtendedClient;
 
 export default async function createClient(): Promise<IExtendedClient> {
@@ -56,7 +38,6 @@ export default async function createClient(): Promise<IExtendedClient> {
     // create a new Discord client
     const client: IExtendedClient = new ExtendedClient(discordOpts);
 
-    // @ts-ignore
     client.on('warn', console.warn);
 
     return client;

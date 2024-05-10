@@ -20,12 +20,14 @@ async function handleCommands(
     ctx: InteractionCreateCtx,
     interaction: CommandInteraction,
 ): Promise<void> {
+    console.debug('handling commands');
     if (!interaction.isChatInputCommand()) return;
     const simpleCommand = ctx.client.simpleCommands.get(
         interaction.commandName,
     );
 
     if (simpleCommand) {
+        console.debug('found simple command', simpleCommand.name);
         if (!(await simpleCommand.shouldAttempt(interaction))) {
             return;
         }
@@ -39,11 +41,13 @@ async function handleCommands(
     );
 
     if (!clusterableCommand) {
+        console.debug('found no command', simpleCommand.name);
         return;
     }
 
     try {
         if (!(await clusterableCommand.shouldAttempt(interaction))) {
+            console.debug('should not attempt', clusterableCommand.name);
             return;
         }
 
@@ -54,10 +58,15 @@ async function handleCommands(
 
         // const childrenCount = (await ctx.motherServer.io.fetchSockets()).length;
         // const shouldMomRunPercent = 1 / (childrenCount + 1);
-        if (await clusterableCommand.canExecute(ctx, payload)) {
-            await clusterableCommand.execute(ctx, payload);
+        if ((await clusterableCommand.canExecute(ctx, payload)) && false) {
+            console.debug(
+                'executing clusterable command as leader',
+                clusterableCommand.name,
+                payload,
+            );
+            const resp = await clusterableCommand.execute(ctx, payload);
+            await interaction.reply(resp.message);
         } else {
-            // TODO: otherwise delegate
             await interaction.reply(`let me ask my children...`);
             const APIPayload = await clusterableCommand.buildClusterPayload(
                 payload,
@@ -69,6 +78,7 @@ async function handleCommands(
                 clusterableCommand.name,
                 APIPayload,
             );
+            console.debug('received response from children', response);
 
             if (response.success) {
                 await interaction.followUp(

@@ -22,10 +22,13 @@ const command: ClusterableCommand<CommandInteraction> = {
         return clusterToBase(client, payload);
     },
     async canExecute(client, payload): Promise<boolean> {
-        return voiceChannelRestriction(payload.guild.id, payload.member.id);
+        return voiceChannelRestriction(
+            payload.guild.id,
+            payload.member.voice?.channel.id,
+        );
     },
     async execute(client, param) {
-        AQM.stop(param.guild.id);
+        await AQM.stop(param.guild.id);
         const userInfo = await findOrCreate(GuildUserInfo, {
             userId: param.member.id,
             guildId: param.guild.id,
@@ -52,31 +55,6 @@ const command: ClusterableCommand<CommandInteraction> = {
         .setName('stop')
         .setDescription('Stop the music.. you sure?')
         .setDMPermission(false),
-    // async run(client, interaction) {
-    //     const member = interaction.member as GuildMember;
-    //     if (
-    //         !member.voice ||
-    //         !voiceChannelRestriction(
-    //             interaction.guildId,
-    //             member.voice?.channel.id,
-    //         )
-    //     ) {
-    //         await interaction.reply({
-    //             content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
-    //             ephemeral: true,
-    //         });
-    //         return;
-    //     }
-    //
-    //     AQM.stop(interaction.guild.id);
-    //     const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-    //         userId: member.id,
-    //         guildId: interaction.guild.id,
-    //     });
-    //     return interaction.reply(
-    //         getAffirmativeDialog('stop', member, userInfo),
-    //     );
-    // },
 };
 
 export default command;

@@ -3,7 +3,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { getAffirmativeDialog } from '../../dialog';
 import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
-// @ts-ignore
 import ytdl from 'ytdl-core';
 import { ScoMomCommand } from '../types';
 import { GuildMember, InteractionType } from 'discord.js';

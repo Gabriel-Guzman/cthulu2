@@ -12,7 +12,6 @@ export type APIExecutePayload = {
 } & APIBasePayload;
 
 export interface ServerToClientEvents {
-    // [Questions.CAN_EXECUTE]: (payload: APIBasePayload) => string | false;
     [Questions.CAN_EXECUTE]: (
         payload: APIExecutePayload,
         cb: (clientId: string) => void | Promise<void>,

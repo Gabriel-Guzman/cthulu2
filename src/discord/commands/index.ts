@@ -8,16 +8,6 @@ import Stop from './music/stop';
 import List from './music/list';
 import RemoveIntro from './music/removeIntro';
 
-export default [
-    Level,
-    Intro,
-    // Pause,
-    // Queue,
-    // Resume,
-    // Skip,
-    // Stop,
-    RemoveIntro,
-    List,
-];
+export default [Level, Intro, RemoveIntro, List];
 
 export const clusterableCommands = [Pause, Queue, Resume, Skip, Stop];

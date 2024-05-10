@@ -7,7 +7,6 @@ import ytdl from 'ytdl-core';
 import {
     ChatInputCommandInteraction,
     GuildMember,
-    InteractionType,
     VoiceChannel,
 } from 'discord.js';
 import { ClusterableCommand } from '../types';
@@ -131,14 +130,6 @@ const command: ClusterableCommand<
         return payload;
     },
     async shouldAttempt(interaction): Promise<boolean> {
-        if (!(interaction.type === InteractionType.ApplicationCommand)) {
-            return;
-        }
-
-        if (!interaction.isChatInputCommand()) {
-            return;
-        }
-
         const member = interaction.member as GuildMember;
         const voiceChannel = member.voice.channel;
 
@@ -147,8 +138,9 @@ const command: ClusterableCommand<
                 content: 'Must be in a voice channel to play music',
                 ephemeral: true,
             });
-            return;
+            return false;
         }
+        return true;
     },
 };
 

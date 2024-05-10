@@ -15,6 +15,7 @@ export class ScoRedis implements IMemory<string, object> {
     private _client: TRedisClient;
 
     async init() {
+        console.log('connecting to redis at ' + process.env.REDIS_URI);
         this._client = await buildRedisClient(process.env.REDIS_URI);
     }
 
@@ -23,7 +24,7 @@ export class ScoRedis implements IMemory<string, object> {
     }
 
     async write(key, value): Promise<void> {
-        await this._client.set(key, value);
+        await this._client.set(key, JSON.stringify(value));
     }
 
     async writeWithTTL(key, value, age): Promise<void> {
@@ -36,8 +37,14 @@ export class ScoRedis implements IMemory<string, object> {
     }
 }
 
+type RedisContainer = {
+    client?: ScoRedis;
+};
+export const builtClient: RedisContainer = {};
+
 export default async function BuildRedis(): Promise<ScoRedis> {
     const r = new ScoRedis();
     await r.init();
+    builtClient.client = r;
     return r;
 }

@@ -25,7 +25,13 @@ export class ChildSocketManager {
 }
 
 export async function buildChildClient(): Promise<ChildSocketManager> {
-    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io();
+    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
+        'http://localhost:3000',
+        {
+            retries: 20,
+            timeout: 5000,
+        },
+    );
     await new Promise<void>((resolve, reject) => {
         socket.on('connect', () => {
             resolve();

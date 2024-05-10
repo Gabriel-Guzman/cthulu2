@@ -1,5 +1,5 @@
-import Memory from '@/memory';
 import { confirmCredentials } from '@/discord/spotify';
+import { Context } from '@/discord';
 
 afterEach(() => {
     // restore the spy created with spyOn
@@ -17,16 +17,20 @@ describe('confirmCredentials', () => {
         const {
             body: { access_token: token },
         } = credentialsGrantResp();
-        const memGet = jest.spyOn(Memory, 'get').mockReturnValueOnce(token);
-        const memWriteTtl = jest
-            .spyOn(Memory, 'writeWithTTL')
-            .mockImplementationOnce(async () => {});
+        const memGet = jest.fn().mockReturnValueOnce(token);
+        const memWriteTtl = jest.fn().mockImplementationOnce(async () => {});
 
         const spotify = {
             clientCredentialsGrant: jest.fn(async () => credentialsGrantResp()),
             setAccessToken: jest.fn((_: string) => {}),
         };
-        await confirmCredentials(spotify);
+        const context = {
+            redis: {
+                get: memGet,
+                writeWithTTL: memWriteTtl,
+            },
+        } as unknown as Context;
+        await confirmCredentials(context, spotify);
         expect(spotify.clientCredentialsGrant).toHaveBeenCalledTimes(0);
         expect(spotify.setAccessToken).toHaveBeenCalledWith(token);
         expect(memGet).toHaveBeenCalledTimes(1);
@@ -34,10 +38,14 @@ describe('confirmCredentials', () => {
         expect(memWriteTtl).toHaveBeenCalledTimes(0);
     });
     it('should refresh the token', async () => {
-        jest.spyOn(Memory, 'get').mockReturnValueOnce(undefined);
-        jest.spyOn(Memory, 'writeWithTTL').mockImplementationOnce(
-            async () => {},
-        );
+        const memGet = jest.fn().mockReturnValueOnce(undefined);
+        const memWriteTtl = jest.fn().mockImplementationOnce(() => {});
+        const context = {
+            redis: {
+                get: memGet,
+                writeWithTTL: memWriteTtl,
+            },
+        } as unknown as Context;
 
         const resp = credentialsGrantResp();
 
@@ -46,7 +54,7 @@ describe('confirmCredentials', () => {
             setAccessToken: jest.fn((_: string) => {}),
         };
 
-        await confirmCredentials(spotify);
+        await confirmCredentials(context, spotify);
         expect(spotify.clientCredentialsGrant).toHaveBeenCalledTimes(1);
         expect(spotify.setAccessToken).toHaveBeenCalledWith(
             credentialsGrantResp().body.access_token,

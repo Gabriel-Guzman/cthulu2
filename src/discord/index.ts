@@ -1,7 +1,7 @@
 import createClient, { IExtendedClient } from './client/index';
 import eventHandlers from './eventHandlers';
 import db from '@/db';
-import { Client } from 'discord.js';
+import { Client, Events } from 'discord.js';
 import Commands, { clusterableCommands } from '@/discord/commands';
 import {
     BaseCommand,
@@ -13,6 +13,7 @@ import config, { ClusteringRole } from '@/config';
 import { buildMotherServer, ClusterMotherManager } from '@/cluster/mother';
 import { buildChildClient, ChildSocketManager } from '@/cluster/child';
 import { Questions } from '@/cluster/types';
+import { lonely } from '@/discord/eventHandlers/voiceStateUpdate';
 
 export type Context = {
     redis: ScoRedis;
@@ -35,6 +36,7 @@ export default async function scoMom(): Promise<Client> {
 
     // create the logged in discord client instance
     const client = await createClient();
+    console.log('connexting to disc at ' + process.env.DISCORD_API_TOKEN);
     await client.login(process.env.DISCORD_API_TOKEN);
     console.log(
         'logged in as ' +
@@ -71,6 +73,9 @@ export default async function scoMom(): Promise<Client> {
 
 function registerChildEvents(context: ChildContext) {
     const client = context.client;
+    context.client.on(Events.VoiceStateUpdate, (oldsState, newState) => {
+        lonely(oldsState, newState).catch(console.error);
+    });
     context.childClient.socket.on(
         Questions.CAN_EXECUTE,
         async (payload, cb) => {

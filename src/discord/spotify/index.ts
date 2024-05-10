@@ -14,7 +14,7 @@ export async function confirmCredentials(
         await ctx.redis.writeWithTTL(
             SPOTIFY_CACHE_KEY,
             token,
-            data.body.expires_in * 1000,
+            data.body.expires_in,
         );
         spotifyInstance.setAccessToken(data.body.access_token);
     } else {

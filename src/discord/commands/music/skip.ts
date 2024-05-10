@@ -26,7 +26,10 @@ const command: ClusterableCommand = {
         return clusterToBase(client, payload);
     },
     async canExecute(client, payload): Promise<boolean> {
-        return voiceChannelRestriction(payload.guild.id, payload.member.id);
+        return voiceChannelRestriction(
+            payload.guild.id,
+            payload.member.voice?.channel.id,
+        );
     },
     async shouldAttempt(interaction) {
         const member = <GuildMember>interaction.member;

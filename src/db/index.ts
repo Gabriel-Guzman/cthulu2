@@ -1,5 +1,5 @@
 import mongoose, { HydratedDocument, Model } from 'mongoose';
-import IPM from '@/memory';
+import { builtClient } from '@/redis';
 
 export default function () {
     return mongoose.connect(process.env.MONGODB_URI).then(() => {
@@ -79,7 +79,7 @@ const serverInfoSchema = new mongoose.Schema<IServerInfo>({
 
 serverInfoSchema.pre('save', async function () {
     try {
-        removeFromCache(ServerInfo, this);
+        await removeFromCache(ServerInfo, this);
     } catch (e) {
         console.error(e);
     }
@@ -113,7 +113,7 @@ const guildUserInfoSchema = new mongoose.Schema<IGuildUserInfo>({
 
 guildUserInfoSchema.pre('save', async function () {
     try {
-        removeFromCache(GuildUserInfo, this);
+        await removeFromCache(GuildUserInfo, this);
     } catch (e) {
         console.error(e);
     }
@@ -127,7 +127,7 @@ const GuildUserInfo = mongoose.model<IGuildUserInfo>(
     guildUserInfoSchema,
 );
 
-type IModels = IServerInfo | IGuildUserInfo;
+export type IModels = IServerInfo | IGuildUserInfo;
 
 type CacheKeyCreator = (document: Partial<IModels>) => string;
 
@@ -140,24 +140,23 @@ keyGens.set(
 );
 keyGens.set(ServerInfo, ({ guildId }: IServerInfo) => `server_info_${guildId}`);
 
-const Memory = new IPM<string, HydratedDocument<IModels>>();
-
 export async function findOrCreate<TQuery extends IModels>(
     model: Model<TQuery>,
     opts: Partial<TQuery>,
 ): Promise<HydratedDocument<TQuery>> {
-    // const gen = keyGens.get(model);
-    // if (!gen) {
-    //     throw new Error(
-    //         'cachedFindOneOrUpsert called on model with no key generator',
-    //     );
-    // }
-    // const key = gen(opts);
-    let res = await model.findOne(opts);
+    const Memory = builtClient.client;
+    const gen = keyGens.get(model);
+    if (!gen) {
+        throw new Error(
+            'cachedFindOneOrUpsert called on model with no key generator',
+        );
+    }
+    const key = gen(opts);
+    let res = await cachedFindOne(model, opts);
     if (res) return res;
 
     res = await model.create(opts);
-    // await Memory.writeWithTTL(key, res);
+    await Memory.writeWithTTL(key, JSON.stringify(res), 60 * 60);
     return res;
 }
 
@@ -173,25 +172,25 @@ export async function cachedFindOne<T extends IModels>(
     return _cachedFindOne(key, model, opts);
 }
 
-async function _cachedFindOne<T extends IModels, H extends HydratedDocument<T>>(
+async function _cachedFindOne<T extends IModels>(
     key: string,
     model: Model<T>,
     opts: Partial<T>,
-): Promise<H | void> {
-    let res = <H>Memory.get(key);
-    if (res) return res;
-
-    res = await model.findOne(opts);
+): Promise<HydratedDocument<T>> {
+    const Memory = builtClient.client;
+    const res: T = await Memory.get(key);
     if (res) {
-        await Memory.writeWithTTL(key, res);
-        return res;
+        return model.hydrate(res);
     }
+
+    return model.findOne(opts);
 }
 
-export function removeFromCache<T extends IModels>(
+export async function removeFromCache<T extends IModels>(
     model: Model<T>,
     opts: T,
-): void {
+): Promise<void> {
+    const Memory = builtClient.client;
     const gen = keyGens.get(model);
     if (!gen) {
         throw new Error(

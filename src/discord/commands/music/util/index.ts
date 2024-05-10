@@ -156,19 +156,3 @@ export async function buildPayload(
         }
     }
 }
-
-// export function ensureVoiceConnectionTo(
-//     guildId: string,
-//     channel: VoiceChannel
-// ): VoiceConnection {
-//     const connection = getVoiceConnection(guildId);
-//     if (connection) return connection;
-//
-//     const newConnection = joinVoiceChannel({
-//         guildId,
-//         channelId: channel.id,
-//         adapterCreator: channel.guild.voiceAdapterCreator,
-//     });
-//
-//
-// }

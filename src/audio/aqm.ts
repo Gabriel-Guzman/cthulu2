@@ -285,7 +285,6 @@ class GuildQueue {
         player.on(AudioPlayerStatus.Idle, this.idleListener.bind(this));
 
         player.on('unsubscribe', (subscription) => {
-            console.log('GuildQueue: unsubscribe event from ', subscription);
             // this is bad... i guess we'll just set not ready state to get our
             // player in order
             this.setState(QueueState.NOT_READY);
@@ -298,10 +297,11 @@ class GuildQueue {
 class AudioQueueManager {
     queues = new Map<string, GuildQueue>();
 
-    stop(guildId: string): void {
+    async stop(guildId: string): Promise<void> {
         const gq = this.queues.get(guildId);
         if (gq) {
-            gq.stop();
+            await gq.stop();
+            this.queues.delete(guildId);
         }
     }
 
@@ -400,7 +400,6 @@ class AudioQueueManager {
         }
 
         connection.on('debug', (m) => console.debug('vc debug: ' + m));
-
         return connection;
     }
 
@@ -429,8 +428,10 @@ class AudioQueueManager {
                 // Seems to be a real disconnect which SHOULDN'T be recovered from
                 connection.destroy();
                 const queue = this.queues.get(channel.guild.id);
-                await queue.stop();
-                this.queues.delete(channel.guild.id);
+                if (queue) {
+                    await queue.stop();
+                    this.queues.delete(channel.guild.id);
+                }
             }
         });
 
