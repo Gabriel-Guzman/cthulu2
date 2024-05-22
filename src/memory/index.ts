@@ -20,7 +20,7 @@ class IPM<K, AllowedTypes> implements IMemory<K, AllowedTypes> {
         }
         const timeout = setTimeout(() => {
             this.delete(key);
-        }, ageInSeconds);
+        }, ageInSeconds * 1000);
 
         this.ttlTimeouts.set(key, timeout);
 
