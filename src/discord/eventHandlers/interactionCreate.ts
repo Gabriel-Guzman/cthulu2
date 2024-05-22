@@ -15,6 +15,7 @@ import {
     InteractionType,
 } from 'discord.js';
 import { MotherContext } from '@/discord';
+import { ClusterRequestNamespace } from '@/cluster/types';
 
 async function handleCommands(
     ctx: InteractionCreateCtx,
@@ -28,7 +29,7 @@ async function handleCommands(
 
     if (simpleCommand) {
         console.debug('found simple command', simpleCommand.name);
-        if (!(await simpleCommand.shouldAttempt(interaction))) {
+        if (!(await simpleCommand.validate(ctx, interaction))) {
             return;
         }
 
@@ -46,18 +47,14 @@ async function handleCommands(
     }
 
     try {
-        if (!(await clusterableCommand.shouldAttempt(interaction))) {
+        if (!(await clusterableCommand.validate(ctx, interaction))) {
             console.debug('should not attempt', clusterableCommand.name);
             return;
         }
 
         // check if we can run it
-        const payload = await clusterableCommand.buildPayloadFromInteraction(
-            interaction,
-        );
+        const payload = await clusterableCommand.buildPayload(ctx, interaction);
 
-        // const childrenCount = (await ctx.motherServer.io.fetchSockets()).length;
-        // const shouldMomRunPercent = 1 / (childrenCount + 1);
         if ((await clusterableCommand.canExecute(ctx, payload)) && false) {
             console.debug(
                 'executing clusterable command as leader',
@@ -68,21 +65,24 @@ async function handleCommands(
             await interaction.reply(resp.message);
         } else {
             await interaction.reply(`let me ask my children...`);
-            const APIPayload = await clusterableCommand.buildClusterPayload(
-                payload,
-            );
 
             // get a response from some child
             const response = await ctx.motherServer.delegate(
                 ctx,
+                ClusterRequestNamespace.COMMAND,
                 clusterableCommand.name,
-                APIPayload,
+                payload,
+                interaction.guildId,
             );
             console.debug('received response from children', response);
 
             if (response.success) {
                 await interaction.followUp(
-                    `<@${response.responder}> responded: with ${response.message}`,
+                    `<@${response.responder}> responded:${response.message}`,
+                );
+            } else {
+                await interaction.followUp(
+                    `oh no.. <@${response.responder}> says: ${response.message}`,
                 );
             }
         }

@@ -1,55 +1,51 @@
 import { EmbedBuilder, SlashCommandBuilder } from '@discordjs/builders';
+import { ClusterableCommand } from '../types';
+import { GuildMember } from 'discord.js';
+import { areWeInChannel, isUserInVoice } from '@/discord/commands/music/util';
+import { findOrCreate, GuildUserInfo } from '@/db';
+import pagination from '@/discord/util/pagination';
 import { AQM, IAudioPayload, UnsoughtYoutubePayload } from '@/audio/aqm';
 import { getAffirmativeDialog } from '@/discord/dialog';
-import { findOrCreate, GuildUserInfo } from '@/db';
-import { ScoMomCommand } from '../types';
-import { CommandInteraction, GuildMember } from 'discord.js';
+import { hydrateCommandPayload } from '@/discord/commands/payload';
 import chunk from 'lodash/chunk';
-import pagination from '@/discord/util/pagination';
-import { voiceChannelRestriction } from '@/discord/commands/music/util';
+import { buildChildNodeResponse } from '@/cluster/child';
 
-export default {
+const command: ClusterableCommand = {
     name: 'list',
     builder: new SlashCommandBuilder()
         .setName('list')
         .setDescription('Lists the songs in the queue')
         .setDMPermission(false),
-    async shouldAttempt(interaction: CommandInteraction): Promise<boolean> {
-        const member = interaction.member as GuildMember;
-        if (
-            !member.voice ||
-            !voiceChannelRestriction(
-                interaction.guildId,
-                member.voice?.channel.id,
-            )
-        ) {
-            await interaction.reply({
-                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
-                ephemeral: true,
-            });
-            return;
-        }
+    async validate(ctx, interaction) {
+        return isUserInVoice(interaction.member as GuildMember);
     },
 
-    async execute(
-        // client: IExtendedClient,
-        interaction: CommandInteraction,
-    ): Promise<void> {
+    async buildPayload(ctx, interaction) {
+        return {
+            member: (<GuildMember>interaction.member).id,
+            guild: interaction.guild.id,
+            channel: interaction.channel.id,
+        };
+    },
+
+    async canExecute(context, payload) {
+        const { member } = await hydrateCommandPayload(context.client, payload);
+        return areWeInChannel(payload.guild, member.voice?.channel.id);
+    },
+
+    async execute(context, payload) {
+        const { member, channel } = await hydrateCommandPayload(
+            context.client,
+            payload,
+        );
         const userInfo = await findOrCreate(GuildUserInfo, {
-            userId: (interaction.member as GuildMember).id,
-            guildId: interaction.guild.id,
+            userId: (member as GuildMember).id,
+            guildId: payload.guild,
         });
 
-        const reply = getAffirmativeDialog(
-            'list',
-            interaction.member as GuildMember,
-            userInfo,
-        );
-        await interaction.reply(reply);
+        const gq = AQM.queues.get(payload.guild);
 
-        const gq = AQM.queues.get(interaction.guild.id);
-
-        const youtubePayloadPromises = AQM.list(interaction.guild.id).map(
+        const youtubePayloadPromises = AQM.list(payload.guild).map(
             async (a) => {
                 if (a instanceof UnsoughtYoutubePayload) {
                     return a.toYoutubePayload();
@@ -58,7 +54,7 @@ export default {
             },
         );
 
-        // load unsearched youtube data for embeds
+        // load unsought youtube data for embeds
         const list = await Promise.all(youtubePayloadPromises);
 
         const chunks = chunk(list, 5);
@@ -74,36 +70,44 @@ export default {
                 })
                 .join('\n');
 
-            const embed = new EmbedBuilder()
-                // .setAuthor('Queue', client.application.iconURL())
-                .setAuthor({
-                    name: 'Queue',
-                    iconURL: interaction.client.application.iconURL(),
-                })
-                .setDescription(
-                    `**currently playing:** \n[${gq
-                        .nowPlaying()
-                        .getTitle()}](${gq
-                        .nowPlaying()
-                        .getLink()}) \n\n**up next:** \n${SongsDescription}\n\n`,
-                )
-                .addFields({
-                    name: 'queue length: ',
-                    value: gq.payloads.length.toString(),
-                });
-
-            return embed;
+            return (
+                new EmbedBuilder()
+                    // .setAuthor('Queue', client.application.iconURL())
+                    .setAuthor({
+                        name: 'Queue',
+                        iconURL: context.client.application.iconURL(),
+                    })
+                    .setDescription(
+                        `**currently playing:** \n[${gq
+                            .nowPlaying()
+                            .getTitle()}](${gq
+                            .nowPlaying()
+                            .getLink()}) \n\n**up next:** \n${SongsDescription}\n\n`,
+                    )
+                    .addFields({
+                        name: 'queue length: ',
+                        value: gq.payloads.length.toString(),
+                    })
+            );
         });
 
         if (pages.length === 1) {
-            await interaction.channel.send({
+            await channel.send({
                 embeds: [pages[0]],
             });
             return;
         } else if (!pages.length) {
-            await interaction.channel.send('queue is empty silly silly child.');
+            await channel.send('queue is empty silly silly child.');
             return;
         }
-        await pagination(interaction, pages, interaction.client);
+        await pagination(channel, member, pages, context.client);
+        const reply = getAffirmativeDialog(
+            'list',
+            member as GuildMember,
+            userInfo,
+        );
+        return buildChildNodeResponse(true, reply);
     },
-} as ScoMomCommand;
+};
+
+export default command;

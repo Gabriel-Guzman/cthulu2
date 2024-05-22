@@ -37,3 +37,16 @@ export async function lock(
         }ms`,
     );
 }
+
+export async function lockDontWait(
+    memory: IMemory<unknown, unknown>,
+    resourceName: string,
+): Promise<ReleaseFn | void> {
+    const lockKey = mutexLockKey(resourceName);
+    const exists = await memory.get(lockKey);
+    if (exists) return;
+    else {
+        await memory.writeWithTTL(lockKey, '1', 10);
+        return () => memory.delete(lockKey);
+    }
+}

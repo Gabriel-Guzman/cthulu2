@@ -4,12 +4,9 @@ import * as db from '@/db';
 import { IGuildUserInfo, IServerInfo } from '@/db';
 import * as utils from '@/discord/commands/music/util';
 import * as dialog from '@/discord/dialog';
-import {
-    CommandInteraction,
-    Guild,
-    GuildMember,
-    InteractionType,
-} from 'discord.js';
+import * as payload from '@/discord/commands/payload';
+import { CommandBasePayload } from '@/discord/commands/payload';
+import { ChatInputCommandInteraction, InteractionType } from 'discord.js';
 import { HydratedDocument } from 'mongoose';
 import { Context } from '@/discord';
 
@@ -60,8 +57,10 @@ describe('queue.run', () => {
                 },
             },
         };
-        await queue.shouldAttempt(interaction as unknown as CommandInteraction);
-        expect(interaction.isChatInputCommand).toHaveBeenCalledTimes(1);
+        await queue.validate(
+            {} as unknown as Context,
+            interaction as unknown as ChatInputCommandInteraction,
+        );
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({
                 content: expect.anything(),
@@ -83,6 +82,7 @@ describe('queue.run', () => {
             member,
             reply: jest.fn(),
             guild: {
+                id: '124',
                 channels: {
                     fetch: jest.fn().mockReturnValueOnce('123'),
                 },
@@ -118,15 +118,24 @@ describe('queue.run', () => {
             .spyOn(dialog, 'getAffirmativeDialog')
             .mockImplementation(() => 'asdfalkjsdf');
 
-        await queue.execute(undefined as unknown as Context, {
-            member: member as unknown as GuildMember,
-            guild: interaction.guild as unknown as Guild,
+        jest.spyOn(payload, 'hydrateCommandPayload').mockImplementation(
+            async () =>
+                ({
+                    member,
+                    guild: interaction.guild,
+                } as unknown as CommandBasePayload),
+        );
+
+        const client = {};
+        await queue.execute({ client } as unknown as Context, {
+            member: member.id,
+            guild: interaction.guild.id,
             query: 'happy',
         });
 
         expect(findOneSpy).toHaveBeenCalledTimes(2);
         expect(buildPayloadSpy).toHaveBeenCalledWith(
-            undefined,
+            { client },
             'happy',
             member.id,
         );

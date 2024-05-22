@@ -4,52 +4,31 @@ import { getAffirmativeDialog } from '../../dialog';
 import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
-import {
-    ChatInputCommandInteraction,
-    GuildMember,
-    VoiceChannel,
-} from 'discord.js';
+import { GuildMember, VoiceChannel } from 'discord.js';
 import { ClusterableCommand } from '../types';
 import {
+    areWeInChannel,
     buildPayload,
-    voiceChannelRestriction,
+    isBotInChannel,
+    isUserInVoice,
 } from '@/discord/commands/music/util';
 import { buildChildNodeResponse } from '@/cluster/child';
 import {
-    APIBasePayload,
-    BasePayload,
-    baseToCluster,
+    CommandBaseMinimumPayload,
+    hydrateCommandPayload,
 } from '@/discord/commands/payload';
 
 // socket io payload
-interface MinimumPayload extends APIBasePayload {
+interface MinimumPayload extends CommandBaseMinimumPayload {
     query: string;
 }
 
-interface ExecutePayload extends BasePayload {
-    query: string;
-}
-
-const command: ClusterableCommand<
-    ChatInputCommandInteraction,
-    ExecutePayload,
-    MinimumPayload
-> = {
-    async buildClusterPayload(
-        payload: ExecutePayload,
-    ): Promise<MinimumPayload> {
+const command: ClusterableCommand<MinimumPayload> = {
+    async buildPayload(ctx, evData) {
         return {
-            ...baseToCluster(payload),
-            query: payload.query,
-        };
-    },
-    async buildExecutePayload(client, payload): Promise<ExecutePayload> {
-        const guild = await client.guilds.fetch(payload.guildId);
-        const member = await guild.members.fetch(payload.memberId);
-        return {
-            guild,
-            member,
-            query: payload.query,
+            query: evData.options.getString('query'),
+            guild: evData.guild.id,
+            member: (<GuildMember>evData.member).id,
         };
     },
     name: 'queue',
@@ -66,22 +45,37 @@ const command: ClusterableCommand<
                 ),
         ),
     async canExecute(ctx, payload): Promise<boolean> {
-        const { guild, member } = payload;
-        return voiceChannelRestriction(guild.id, member.voice?.channel.id);
+        const { member, guild } = await hydrateCommandPayload(
+            ctx.client,
+            payload,
+        );
+        if (!isUserInVoice(member)) return false;
+        if (!member.voice.channel.joinable) return false;
+        const me = await guild.members.fetch(ctx.client.user);
+        if (isUserInVoice(me)) {
+            return areWeInChannel(guild.id, member.voice.channelId);
+        } else {
+            return !isBotInChannel(member.voice.channel);
+        }
     },
     async execute(ctx, payload) {
+        const { member, guild } = await hydrateCommandPayload(
+            ctx.client,
+            payload,
+        );
         try {
             const audioPayload = await buildPayload(
                 ctx,
                 payload.query,
-                payload.member.id,
+                payload.member,
             );
 
-            const { guild, member } = payload;
             let textChannel;
             const serverInfo = await findOrCreate(ServerInfo, {
-                guildId: guild.id,
+                guildId: payload.guild,
             });
+
+            // if there's a channel for bot to spam in this guild
             if (
                 serverInfo.botReservedTextChannels &&
                 serverInfo.botReservedTextChannels.length
@@ -120,16 +114,7 @@ const command: ClusterableCommand<
         }
     },
 
-    async buildPayloadFromInteraction(interaction) {
-        const query = interaction.options.getString('query');
-        const payload: ExecutePayload = {
-            guild: interaction.guild,
-            member: interaction.member as GuildMember,
-            query,
-        };
-        return payload;
-    },
-    async shouldAttempt(interaction): Promise<boolean> {
+    async validate(ctx, interaction): Promise<boolean> {
         const member = interaction.member as GuildMember;
         const voiceChannel = member.voice.channel;
 

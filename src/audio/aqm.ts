@@ -16,7 +16,12 @@ import {
 } from '@discordjs/voice';
 
 import Search from '@/audio/search';
-import { EmbedBuilder, TextChannel, VoiceChannel } from 'discord.js';
+import {
+    EmbedBuilder,
+    TextChannel,
+    VoiceBasedChannel,
+    VoiceChannel,
+} from 'discord.js';
 
 interface AudioPayload {
     readonly requestedBy: string;
@@ -356,7 +361,7 @@ class AudioQueueManager {
         }
     }
 
-    async playImmediatelySilent(channel, payload) {
+    async playImmediatelySilent(channel: VoiceBasedChannel, payload: Payload) {
         let gq = this.queues.get(channel.guild.id);
         if (gq && gq.getState() === QueueState.PLAYING) {
             return false;
@@ -370,7 +375,7 @@ class AudioQueueManager {
     }
 
     async connectToVoice(
-        channel: VoiceChannel,
+        channel: VoiceBasedChannel,
         guildId: string,
     ): Promise<VoiceConnection> {
         let connection = getVoiceConnection(guildId);
@@ -404,7 +409,7 @@ class AudioQueueManager {
     }
 
     private async newGuildQueue(
-        channel: VoiceChannel,
+        channel: VoiceBasedChannel,
         textChannel: TextChannel,
     ): Promise<GuildQueue> {
         const connection = await this.connectToVoice(channel, channel.guild.id);

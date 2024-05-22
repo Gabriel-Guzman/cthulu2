@@ -54,9 +54,26 @@ async function publishCommands(apiKey: string) {
 
 config();
 Promise.all(
-    appCfg.apps.map((app) =>
-        publishCommands(app.env_production.DISCORD_API_TOKEN),
-    ),
+    appCfg.apps.map(async (app) => {
+        if (app.env_production.ROLE === 'MOTHER')
+            publishCommands(app.env_production.DISCORD_API_TOKEN).then(() =>
+                console.log('commands published for ', app.name),
+            );
+        else {
+            const rest = new REST({ version: '9' }).setToken(
+                app.env_production.DISCORD_API_TOKEN,
+            );
+
+            rest.on('rateLimited', (...events) =>
+                console.log('RATE LIMITED', ...events),
+            );
+            const client: IExtendedClient = await createClient();
+            await client.login(app.env_production.DISCORD_API_TOKEN);
+            await rest.delete(
+                Routes.applicationCommands(client.application.id),
+            );
+        }
+    }),
 )
     .then(console.log)
     .catch(console.error);

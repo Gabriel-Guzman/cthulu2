@@ -1,7 +1,7 @@
 import createClient, { IExtendedClient } from './client/index';
 import eventHandlers from './eventHandlers';
 import db from '@/db';
-import { Client, Events } from 'discord.js';
+import { Client } from 'discord.js';
 import Commands, { clusterableCommands } from '@/discord/commands';
 import {
     BaseCommand,
@@ -12,8 +12,8 @@ import BuildRedis, { ScoRedis } from '@/redis';
 import config, { ClusteringRole } from '@/config';
 import { buildMotherServer, ClusterMotherManager } from '@/cluster/mother';
 import { buildChildClient, ChildSocketManager } from '@/cluster/child';
-import { Questions } from '@/cluster/types';
-import { lonely } from '@/discord/eventHandlers/voiceStateUpdate';
+import { ClusterRequest, ClusterRequestNamespace } from '@/cluster/types';
+import { getClusterableVoiceStateHandlers } from '@/discord/eventHandlers/voiceStateUpdate';
 
 export type Context = {
     redis: ScoRedis;
@@ -72,16 +72,21 @@ export default async function scoMom(): Promise<Client> {
 }
 
 function registerChildEvents(context: ChildContext) {
+    const voiceStateHandlers = getClusterableVoiceStateHandlers();
     const client = context.client;
-    context.client.on(Events.VoiceStateUpdate, (oldsState, newState) => {
-        lonely(oldsState, newState).catch(console.error);
-    });
     context.childClient.socket.on(
-        Questions.CAN_EXECUTE,
+        ClusterRequest.CAN_EXECUTE,
         async (payload, cb) => {
-            const name = payload.name;
-            const command = client.clusterableCommands.get(name);
-            if (!command) {
+            const { name, namespace } = payload;
+            let handler;
+            if (namespace === ClusterRequestNamespace.COMMAND) {
+                handler = client.clusterableCommands.get(name);
+            } else if (
+                namespace === ClusterRequestNamespace.VOICE_STATE_UPDATE
+            ) {
+                handler = voiceStateHandlers.get(name);
+            }
+            if (!handler) {
                 // it like can't happen.. messages are type safe
                 console.error(
                     'received can_execute request for unknown command ',
@@ -91,8 +96,7 @@ function registerChildEvents(context: ChildContext) {
                 return;
             }
 
-            const ep = await command.buildExecutePayload(client, payload);
-            const can = await command.canExecute(context, ep);
+            const can = await handler.canExecute(context, payload);
             if (can) {
                 cb(client.user.id);
             } else {
@@ -100,26 +104,37 @@ function registerChildEvents(context: ChildContext) {
             }
         },
     );
-    context.childClient.socket.on(Questions.EXECUTE, async (payload, cb) => {
-        const name = payload.name;
-        const command = client.clusterableCommands.get(name);
-        if (!command) {
-            // it like can't happen.. messages are type safe
-            console.error(
-                'received execute request for unknown command ',
-                name,
-            );
-            cb({
-                success: false,
-                message: 'command not found',
-            });
-            return;
-        }
+    context.childClient.socket.on(
+        ClusterRequest.EXECUTE,
+        async (payload, cb) => {
+            const voiceStateHandlers = getClusterableVoiceStateHandlers();
+            const { name, namespace } = payload;
+            let handler;
+            if (namespace === ClusterRequestNamespace.COMMAND) {
+                handler = client.clusterableCommands.get(name);
+            } else if (
+                namespace === ClusterRequestNamespace.VOICE_STATE_UPDATE
+            ) {
+                handler = voiceStateHandlers.get(payload.name);
+            }
+            if (!handler) {
+                // it like can't happen.. messages are type safe
+                console.error(
+                    'received execute request for unknown command ',
+                    name,
+                );
+                cb({
+                    success: false,
+                    message: 'command not found',
+                });
+                return;
+            }
 
-        const ep = await command.buildExecutePayload(client, payload);
-        const resp = await command.execute(context, ep);
-        cb(resp);
-    });
+            // const ep = await command.buildExecutePayload(client, payload);
+            const resp = await handler.execute(context, payload);
+            cb(resp);
+        },
+    );
 }
 
 function storeCommands(

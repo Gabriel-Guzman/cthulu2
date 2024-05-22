@@ -2,7 +2,7 @@ import * as db from '@/db';
 import { GuildUserInfo, IModels, ServerInfo } from '@/db';
 import * as dialog from '@/discord/dialog';
 import removeIntro from '@/discord/commands/music/removeIntro';
-import { CommandInteraction, InteractionType } from 'discord.js';
+import { ChatInputCommandInteraction, InteractionType } from 'discord.js';
 import { HydratedDocument } from 'mongoose';
 
 afterAll(() => {
@@ -62,7 +62,9 @@ describe('removeIntro', () => {
         // const findOne = jest.spyOn(db, "cachedFindOneOrUpsert")
         interaction.isApplicationCommand.mockReturnValueOnce(true);
         interaction.isChatInputCommand.mockReturnValueOnce(true);
-        await removeIntro.execute(interaction as unknown as CommandInteraction);
+        await removeIntro.execute(
+            interaction as unknown as ChatInputCommandInteraction,
+        );
 
         expect(mockedFindOne).toHaveBeenNthCalledWith(1, ServerInfo, {
             guildId: interaction.guild.id,

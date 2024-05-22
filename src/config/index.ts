@@ -13,5 +13,6 @@ export default {
     },
     clustering: {
         role: process.env.ROLE as ClusteringRole,
+        childMessageTimeout: 900, // ms
     },
 };

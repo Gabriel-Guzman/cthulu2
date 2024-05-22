@@ -5,7 +5,7 @@ import { getAffirmativeDialog } from '../../dialog';
 import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 import ytdl from 'ytdl-core';
 import { ScoMomCommand } from '../types';
-import { GuildMember, InteractionType } from 'discord.js';
+import { GuildMember } from 'discord.js';
 
 function isValidHttpUrl(string): boolean {
     let url;
@@ -45,15 +45,7 @@ export default {
                 .setDescription('the youtube link to play when you join voice')
                 .setRequired(true),
         ),
-    async execute(client, interaction) {
-        if (!(interaction.type === InteractionType.ApplicationCommand)) {
-            return;
-        }
-
-        if (!interaction.isChatInputCommand()) {
-            return;
-        }
-
+    async execute(interaction) {
         const member = <GuildMember>interaction.member;
 
         const url = interaction.options.getString('link');

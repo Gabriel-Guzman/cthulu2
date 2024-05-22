@@ -1,44 +1,37 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ClusterableCommand } from '../types';
-import { CommandInteraction, GuildMember } from 'discord.js';
-import { baseToCluster, clusterToBase } from '@/discord/commands/payload';
-import { voiceChannelRestriction } from '@/discord/commands/music/util';
+import { GuildMember } from 'discord.js';
+import { hydrateCommandPayload } from '@/discord/commands/payload';
+import { areWeInChannel } from '@/discord/commands/music/util';
 import { findOrCreate, GuildUserInfo } from '@/db';
 import { getAffirmativeDialog } from '@/discord/dialog';
 import { AQM } from '@/audio/aqm';
 import { buildChildNodeResponse } from '@/cluster/child';
 
-const command: ClusterableCommand<CommandInteraction> = {
-    async buildClusterPayload(payload) {
-        return baseToCluster(payload);
-    },
-    async buildPayloadFromInteraction(interaction: CommandInteraction) {
+const command: ClusterableCommand = {
+    async buildPayload(ctx, evData) {
         return {
-            guild: interaction.guild,
-            member: interaction.member as GuildMember,
+            guild: evData.guild.id,
+            member: (<GuildMember>evData.member).id,
         };
     },
-    async buildExecutePayload(client, payload) {
-        return clusterToBase(client, payload);
-    },
-    async canExecute(client, payload): Promise<boolean> {
-        return voiceChannelRestriction(
-            payload.guild.id,
-            payload.member.voice?.channel.id,
-        );
+    async canExecute(ctx, param): Promise<boolean> {
+        const { member } = await hydrateCommandPayload(ctx.client, param);
+        return areWeInChannel(param.guild, member.voice.channel.id);
     },
     async execute(client, param) {
-        await AQM.stop(param.guild.id);
+        await AQM.stop(param.guild);
         const userInfo = await findOrCreate(GuildUserInfo, {
-            userId: param.member.id,
-            guildId: param.guild.id,
+            userId: param.member,
+            guildId: param.guild,
         });
+        const { member } = await hydrateCommandPayload(client.client, param);
         return buildChildNodeResponse(
             true,
-            getAffirmativeDialog('stop', param.member, userInfo),
+            getAffirmativeDialog('stop', member, userInfo),
         );
     },
-    async shouldAttempt(interaction) {
+    async validate(ctx, interaction) {
         const member = <GuildMember>interaction.member;
         if (!member.voice?.channel) {
             await interaction.reply({

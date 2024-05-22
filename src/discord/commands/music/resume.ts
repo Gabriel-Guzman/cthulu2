@@ -3,62 +3,44 @@ import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '../../dialog';
 import { findOrCreate, GuildUserInfo } from '@/db';
 import { ClusterableCommand } from '../types';
-import { CommandInteraction, GuildMember } from 'discord.js';
-import { voiceChannelRestriction } from '@/discord/commands/music/util';
-import {
-    baseToCluster,
-    clusterToBase,
-    interactionToBase,
-} from '@/discord/commands/payload';
+import { GuildMember } from 'discord.js';
+import { areWeInChannel, isUserInVoice } from '@/discord/commands/music/util';
+import { hydrateCommandPayload } from '@/discord/commands/payload';
 
-const command: ClusterableCommand<CommandInteraction> = {
-    async buildClusterPayload(payload) {
-        return baseToCluster(payload);
+const command: ClusterableCommand = {
+    async buildPayload(ctx, evData) {
+        return {
+            member: (<GuildMember>evData.member).id,
+            guild: evData.guild.id,
+        };
     },
-    buildPayloadFromInteraction(interaction) {
-        return interactionToBase(interaction);
-    },
-    buildExecutePayload(client, payload) {
-        return clusterToBase(client, payload);
-    },
-    async canExecute(client, payload) {
-        return voiceChannelRestriction(
-            payload.guild.id,
-            payload.member.voice?.channel.id,
-        );
+    async canExecute(ctx, payload) {
+        const { member } = await hydrateCommandPayload(ctx.client, payload);
+        return areWeInChannel(payload.guild, member.voice.channel.id);
     },
     name: 'resume',
     builder: new SlashCommandBuilder()
         .setName('resume')
         .setDescription('Unpause the music!')
         .setDMPermission(false),
-    async shouldAttempt(interaction) {
-        if (!interaction.isChatInputCommand()) {
-            return;
-        }
+    async validate(ctx, interaction) {
         const member = <GuildMember>interaction.member;
-        if (
-            !member.voice ||
-            !voiceChannelRestriction(
-                interaction.guildId,
-                member.voice?.channel.id,
-            )
-        ) {
+        if (!isUserInVoice(member)) {
             await interaction.reply({
-                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
+                content: 'gotta be in a voice channel for that bud',
                 ephemeral: true,
             });
             return false;
         }
         return true;
     },
-    async execute(ctx, interaction) {
-        const member = <GuildMember>interaction.member;
+    async execute(ctx, payload) {
+        const { member } = await hydrateCommandPayload(ctx.client, payload);
 
-        AQM.resume(interaction.guild.id);
+        AQM.resume(payload.guild);
         const userInfo = await findOrCreate(GuildUserInfo, {
             userId: member.id,
-            guildId: interaction.guild.id,
+            guildId: payload.guild,
         });
         return {
             success: true,

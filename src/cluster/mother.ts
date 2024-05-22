@@ -2,19 +2,23 @@ import { Server } from 'socket.io';
 import { createServer } from 'http';
 import {
     ClientToServerEvents,
+    ClusterRequest,
     InterServerEvents,
-    Questions,
     ServerToClientEvents,
     SocketData,
 } from '@/cluster/types';
-import { ChildNodeResponse } from '@/discord/commands/types';
-import { InteractionCreateCtx } from '@/discord/eventHandlers/interactionCreate';
-import { lock } from '@/helpers/locks';
-import { APIBasePayload } from '@/discord/commands/payload';
+import { ClusterableCommandResponse } from '@/discord/commands/types';
+import {
+    CommandBaseMinimumPayload,
+    VoiceStateBaseMinimumPayload,
+} from '@/discord/commands/payload';
+import { Context } from '@/discord';
+import config from '@/config';
+import Checkout from '@/helpers/queue';
 
 type DelegationResponse = {
     responder?: string;
-} & ChildNodeResponse;
+} & ClusterableCommandResponse;
 
 export class ClusterMotherManager {
     io: Server<
@@ -24,6 +28,8 @@ export class ClusterMotherManager {
         SocketData
     >;
 
+    checkout: Checkout = new Checkout();
+
     constructor(
         io: Server<ClientToServerEvents, ServerToClientEvents, SocketData>,
     ) {
@@ -31,8 +37,7 @@ export class ClusterMotherManager {
 
         io.on('connection', function (socket) {
             console.log('new socket connection' + socket.id);
-
-            socket.on(Questions.REPORT_TO_MOM, (clientId) => {
+            socket.on(ClusterRequest.REPORT_TO_MOM, (clientId) => {
                 socket.join(clientId);
             });
         });
@@ -40,49 +45,50 @@ export class ClusterMotherManager {
 
     // sends command to a random child
     async delegate(
-        ctx: InteractionCreateCtx,
-        commandName: string,
-        payload: APIBasePayload,
+        ctx: Context,
+        namespace: string,
+        action: string,
+        payload: CommandBaseMinimumPayload | VoiceStateBaseMinimumPayload,
+        checkoutLane = 'global',
     ): Promise<DelegationResponse> {
-        // need to lock
         console.debug('delegating');
-        const release = await lock(ctx.redis, payload.guildId);
+        return this.checkout.placeOrder(checkoutLane, async () => {
+            const responses = await this.io
+                .timeout(config.clustering.childMessageTimeout)
+                .emitWithAck(ClusterRequest.CAN_EXECUTE, {
+                    ...payload,
+                    namespace,
+                    name: action,
+                });
 
-        console.debug('acquired lock');
-        const responses = await this.io
-            .timeout(3000)
-            .emitWithAck(Questions.CAN_EXECUTE, {
-                ...payload,
-                name: commandName,
-            });
+            console.debug('received ' + responses);
 
-        console.debug('received ' + responses);
+            const yesIds = responses.filter((response) => response.length);
+            if (!yesIds.length) {
+                return {
+                    success: false,
+                    message: 'no childs could execute. add more bots!',
+                };
+            }
 
-        const yesIds = responses.filter((response) => response.length);
-        if (!yesIds.length) {
+            const randomNode =
+                yesIds[Math.floor(Math.random() * yesIds.length)];
+
+            console.debug('requesting execute from ', randomNode);
+            const [res] = await this.io
+                .to(randomNode)
+                .timeout(config.clustering.childMessageTimeout)
+                .emitWithAck(ClusterRequest.EXECUTE, {
+                    ...payload,
+                    namespace,
+                    name: action,
+                });
+            console.debug('received', res);
             return {
-                success: false,
-                message: 'no childs could execute. add more bots!',
+                ...res,
+                responder: randomNode,
             };
-        }
-
-        const randomNode = yesIds[Math.floor(Math.random() * responses.length)];
-
-        console.debug('requesting execute from ', randomNode);
-        const [res] = await this.io
-            .to(randomNode)
-            .timeout(3000)
-            .emitWithAck(Questions.EXECUTE, {
-                ...payload,
-                name: commandName,
-            });
-        console.debug('received', res);
-        release();
-        console.debug('releaded lock');
-        return {
-            ...res,
-            responder: randomNode,
-        };
+        });
     }
 }
 

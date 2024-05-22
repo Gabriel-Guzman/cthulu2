@@ -11,6 +11,7 @@ import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
 import ytdl from 'ytdl-core';
 import Spotify, { confirmCredentials } from '@/discord/spotify';
 import { Context } from '@/discord';
+import { GuildChannel, GuildMember } from 'discord.js';
 
 function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     try {
@@ -20,18 +21,31 @@ function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     }
 }
 
-// Returns true if this bot is in channel channelId, flalse otherwise
-export function voiceChannelRestriction(
-    guildId: string,
-    channelId: string,
-): boolean {
-    if (AQM.getChannelId(guildId) && AQM.getChannelId(guildId) !== channelId) {
-        return false;
-    } else if (!channelId) {
+export function areWeInChannel(guildId: string, channelId: string) {
+    const ourChannel = AQM.getChannelId(guildId);
+    if (!ourChannel) {
         return false;
     }
+    return ourChannel === channelId;
+}
 
-    return true;
+export function isUserInVoice(member: GuildMember) {
+    return !!member.voice?.channel?.id;
+}
+
+export function areWeInVoice(guildId): boolean {
+    const ourChannel = AQM.getChannelId(guildId);
+    return !!ourChannel;
+}
+
+export function isBotInChannel(channel: GuildChannel): boolean {
+    const members = channel.members;
+    for (const [_, member] of members) {
+        if (member.user.bot) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export async function buildPayload(

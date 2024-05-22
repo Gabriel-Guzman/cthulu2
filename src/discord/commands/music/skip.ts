@@ -4,8 +4,11 @@ import { getAffirmativeDialog } from '@/discord/dialog';
 import { findOrCreate, GuildUserInfo } from '@/db';
 import { ClusterableCommand } from '../types';
 import { GuildMember } from 'discord.js';
-import { voiceChannelRestriction } from '@/discord/commands/music/util';
-import { baseToCluster, clusterToBase } from '@/discord/commands/payload';
+import { areWeInChannel } from '@/discord/commands/music/util';
+import {
+    clusterToBase,
+    hydrateCommandPayload,
+} from '@/discord/commands/payload';
 
 const command: ClusterableCommand = {
     name: 'skip',
@@ -13,25 +16,17 @@ const command: ClusterableCommand = {
         .setName('skip')
         .setDescription('Skip the current song')
         .setDMPermission(false),
-    async buildClusterPayload(payload) {
-        return baseToCluster(payload);
-    },
-    async buildPayloadFromInteraction(interaction) {
+    async buildPayload(ctx, evData) {
         return {
-            guild: interaction.guild,
-            member: interaction.member as GuildMember,
+            member: (<GuildMember>evData.member).id,
+            guild: evData.guild.id,
         };
     },
-    async buildExecutePayload(client, payload) {
-        return clusterToBase(client, payload);
+    async canExecute(ctx, payload) {
+        const { member } = await hydrateCommandPayload(ctx.client, payload);
+        return areWeInChannel(payload.guild, member.voice.channel.id);
     },
-    async canExecute(client, payload): Promise<boolean> {
-        return voiceChannelRestriction(
-            payload.guild.id,
-            payload.member.voice?.channel.id,
-        );
-    },
-    async shouldAttempt(interaction) {
+    async validate(ctx, interaction) {
         const member = <GuildMember>interaction.member;
         if (!member.voice?.channel) {
             await interaction.reply({
@@ -43,7 +38,8 @@ const command: ClusterableCommand = {
 
         return true;
     },
-    async execute(interaction, payload) {
+    async execute(interaction, minPayload) {
+        const payload = await clusterToBase(interaction.client, minPayload);
         AQM.skip(payload.guild.id);
         const userInfo = await findOrCreate(GuildUserInfo, {
             userId: (payload.member as GuildMember).id,

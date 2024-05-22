@@ -1,16 +1,11 @@
 import { io, Socket } from 'socket.io-client';
-import { ChildNodeResponse } from '@/discord/commands/types';
+import { ClusterableCommandResponse } from '@/discord/commands/types';
 import {
     ClientToServerEvents,
-    Questions,
+    ClusterRequest,
     ServerToClientEvents,
 } from '@/cluster/types';
 import { IExtendedClient } from '@/discord/client';
-
-export type DeployedSocketCommuncation = {
-    heartbeatTimer: NodeJS.Timer;
-    socket: Socket;
-};
 
 export class ChildSocketManager {
     socket: Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -20,7 +15,7 @@ export class ChildSocketManager {
     }
 
     reportForDuty(client: IExtendedClient) {
-        this.socket.emit(Questions.REPORT_TO_MOM, client.user.id);
+        this.socket.emit(ClusterRequest.REPORT_TO_MOM, client.user.id);
     }
 }
 
@@ -46,7 +41,7 @@ export async function buildChildClient(): Promise<ChildSocketManager> {
 export function buildChildNodeResponse(
     success: boolean,
     message: string,
-): ChildNodeResponse {
+): ClusterableCommandResponse {
     return {
         success,
         message,

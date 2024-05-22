@@ -4,7 +4,7 @@ import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
 import { ScoMomCommand } from '../types';
-import { GuildMember, Interaction, InteractionType } from 'discord.js';
+import { GuildMember } from 'discord.js';
 
 export default {
     name: 'remove intro',
@@ -12,13 +12,7 @@ export default {
         .setName('remove-intro')
         .setDescription('Remove your intro music. Cannot be undone.')
         .setDMPermission(false),
-    async execute(interaction: Interaction) {
-        if (
-            !interaction.isChatInputCommand() ||
-            !(interaction.type === InteractionType.ApplicationCommand)
-        ) {
-            return;
-        }
+    async execute(interaction) {
         const member = <GuildMember>interaction.member;
 
         const serverInfo = await findOrCreate(ServerInfo, {

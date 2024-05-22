@@ -10,7 +10,7 @@ const command: ScoMomCommand = {
         .setName('level')
         .setDescription('Display your current SCO level and XP')
         .setDMPermission(false),
-    async shouldAttempt() {
+    async validate() {
         return true;
     },
     async execute(interaction: CommandInteraction): Promise<void> {
