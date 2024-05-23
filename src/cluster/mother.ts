@@ -51,10 +51,11 @@ export class ClusterMotherManager {
         payload: CommandBaseMinimumPayload | VoiceStateBaseMinimumPayload,
         checkoutLane = 'global',
     ): Promise<DelegationResponse> {
-        console.debug('delegating');
         return this.checkout.placeOrder(checkoutLane, async () => {
-            console.time('delegation');
-            console.time('can_execute');
+            const delegationTimerLabel = `delegation ${namespace}.${action}`;
+            const canExecuteTimerLabel = `can_execute ${namespace}.${action}`;
+            console.time(delegationTimerLabel);
+            console.time(canExecuteTimerLabel);
             const responses = await this.io
                 .timeout(config.clustering.childMessageTimeout)
                 .emitWithAck(ClusterRequest.CAN_EXECUTE, {
@@ -63,11 +64,11 @@ export class ClusterMotherManager {
                     name: action,
                 });
 
-            console.timeEnd('can_execute');
-            console.debug('received ' + responses);
+            console.timeEnd(canExecuteTimerLabel);
 
             const yesIds = responses.filter((response) => response.length);
             if (!yesIds.length) {
+                console.timeEnd(delegationTimerLabel);
                 return {
                     success: false,
                     message: 'no childs could execute. add more bots!',
@@ -77,7 +78,8 @@ export class ClusterMotherManager {
             const randomNode =
                 yesIds[Math.floor(Math.random() * yesIds.length)];
 
-            console.time('execute');
+            const executeTimerLabel = `execute ${namespace}.${action}`;
+            console.time(executeTimerLabel);
             console.debug('requesting execute from ', randomNode);
             const [res] = await this.io
                 .to(randomNode)
@@ -88,8 +90,8 @@ export class ClusterMotherManager {
                     name: action,
                 });
 
-            console.timeEnd('execute');
-            console.timeEnd('delegation');
+            console.timeEnd(executeTimerLabel);
+            console.timeEnd(delegationTimerLabel);
             console.debug('received', res);
             return {
                 ...res,

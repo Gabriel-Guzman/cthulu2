@@ -82,7 +82,9 @@ async function handleCommands(
                 );
             } else {
                 await interaction.followUp(
-                    `oh no.. <@${response.responder}> says: ${response.message}`,
+                    response.responder
+                        ? `oh no.. <@${response.responder}> says: ${response.message}`
+                        : `couldnt delegate task. error: ${response.message}`,
                 );
             }
         }

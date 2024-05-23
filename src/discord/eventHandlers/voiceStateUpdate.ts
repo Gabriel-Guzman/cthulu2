@@ -18,7 +18,7 @@ import {
     isBotInChannel,
 } from '@/discord/commands/music/util';
 
-type VoiceStateHandlerParam = {
+export type VoiceStateHandlerParam = {
     oldState: VoiceState;
     newState: VoiceState;
 };
@@ -140,12 +140,10 @@ export default async function handleVoiceStateUpdate(
     newState: VoiceState,
 ): Promise<void> {
     if (oldState.member.user.bot) return;
-    // const ctx: VoiceStateUpdateCtx = await buildVoiceStateUpdateCtx(
-    //     context,
-    //     oldState?.guild.id || newState?.guild.id,
-    // );
     const ctx = context;
-    const simpleHandlersPromise = Promise.all([lonely({ oldState, newState })]);
+    const simpleHandlersPromise = Promise.all(
+        globalSimpleHandlers.map((h) => h({ oldState, newState })),
+    );
 
     const clusterableHandlers = [intro];
     const clusterableHandlersPromise = clusterableHandlers.map(

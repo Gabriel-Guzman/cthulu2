@@ -1,22 +1,37 @@
 import createClient, { IExtendedClient } from './client/index';
 import eventHandlers from './eventHandlers';
 import db from '@/db';
-import { Client, Events, VoiceState } from 'discord.js';
+import {
+    ChatInputCommandInteraction,
+    Client,
+    Events,
+    VoiceState,
+} from 'discord.js';
 import Commands, { clusterableCommands } from '@/discord/commands';
 import {
     BaseCommand,
     ClusterableCommand,
+    ClusterableCommandResponse,
     ScoMomCommand,
 } from '@/discord/commands/types';
 import BuildRedis, { ScoRedis } from '@/redis';
 import config, { ClusteringRole } from '@/config';
 import { buildMotherServer, ClusterMotherManager } from '@/cluster/mother';
 import { buildChildClient, ChildSocketManager } from '@/cluster/child';
-import { ClusterRequest, ClusterRequestNamespace } from '@/cluster/types';
+import {
+    ClusterableEventHandler,
+    ClusterRequest,
+    ClusterRequestNamespace,
+} from '@/cluster/types';
 import {
     getClusterableVoiceStateHandlers,
     globalSimpleHandlers,
+    VoiceStateHandlerParam,
 } from '@/discord/eventHandlers/voiceStateUpdate';
+import {
+    CommandBaseMinimumPayload,
+    VoiceStateBaseMinimumPayload,
+} from '@/discord/commands/payload';
 
 export type Context = {
     redis: ScoRedis;
@@ -90,7 +105,12 @@ function registerChildEvents(context: ChildContext) {
         ClusterRequest.CAN_EXECUTE,
         async (payload, cb) => {
             const { name, namespace } = payload;
-            let handler;
+            let handler: ClusterableEventHandler<
+                VoiceStateHandlerParam | ChatInputCommandInteraction,
+                Context,
+                VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
+                ClusterableCommandResponse | void
+            >;
             if (namespace === ClusterRequestNamespace.COMMAND) {
                 handler = client.clusterableCommands.get(name);
             } else if (

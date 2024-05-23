@@ -6,14 +6,17 @@ import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 
 import { config } from 'dotenv';
-import commands from '../src/discord/commands';
+import commands, { clusterableCommands } from '../src/discord/commands';
 
 import createClient from '../src/discord/client';
 
 import appCfg from 'ecosystem.config';
+import { BaseCommand } from '@/discord/commands/types';
 
 async function publishCommands(apiKey: string) {
-    const commandData = commands;
+    const commandData = (<Array<BaseCommand>>commands).concat(
+        <Array<BaseCommand>>clusterableCommands,
+    );
     const client: IExtendedClient = await createClient();
     await client.login(apiKey);
     const rest = new REST({ version: '9' }).setToken(apiKey);
@@ -76,5 +79,5 @@ Promise.all(
         }
     }),
 )
-    .then(console.log)
+    .then(() => console.log('all done'))
     .catch(console.error);
