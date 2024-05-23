@@ -11,7 +11,6 @@ import Commands, { clusterableCommands } from '@/discord/commands';
 import {
     BaseCommand,
     ClusterableCommand,
-    ClusterableCommandResponse,
     ScoMomCommand,
 } from '@/discord/commands/types';
 import BuildRedis, { ScoRedis } from '@/redis';
@@ -19,6 +18,7 @@ import config, { ClusteringRole } from '@/config';
 import { buildMotherServer, ClusterMotherManager } from '@/cluster/mother';
 import { buildChildClient, ChildSocketManager } from '@/cluster/child';
 import {
+    ClusterableCommandResponse,
     ClusterableEventHandler,
     ClusterRequest,
     ClusterRequestNamespace,
@@ -141,7 +141,12 @@ function registerChildEvents(context: ChildContext) {
         async (payload, cb) => {
             const voiceStateHandlers = getClusterableVoiceStateHandlers();
             const { name, namespace } = payload;
-            let handler;
+            let handler: ClusterableEventHandler<
+                VoiceStateHandlerParam | ChatInputCommandInteraction,
+                Context,
+                VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
+                ClusterableCommandResponse | void
+            >;
             if (namespace === ClusterRequestNamespace.COMMAND) {
                 handler = client.clusterableCommands.get(name);
             } else if (
@@ -164,7 +169,7 @@ function registerChildEvents(context: ChildContext) {
 
             // const ep = await command.buildExecutePayload(client, payload);
             const resp = await handler.execute(context, payload);
-            cb(resp);
+            cb(resp || { success: true, message: '' });
         },
     );
 }

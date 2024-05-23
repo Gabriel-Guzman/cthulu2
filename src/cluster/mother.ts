@@ -2,19 +2,19 @@ import { Server } from 'socket.io';
 import { createServer } from 'http';
 import {
     ClientToServerEvents,
+    ClusterableCommandResponse,
     ClusterRequest,
     InterServerEvents,
     ServerToClientEvents,
     SocketData,
 } from '@/cluster/types';
-import { ClusterableCommandResponse } from '@/discord/commands/types';
 import {
     CommandBaseMinimumPayload,
     VoiceStateBaseMinimumPayload,
 } from '@/discord/commands/payload';
 import { Context } from '@/discord';
 import config from '@/config';
-import Checkout from '@/helpers/queue';
+import Checkout from '@/helpers/checkout';
 
 type DelegationResponse = {
     responder?: string;

@@ -2,7 +2,6 @@ import {
     CommandBaseMinimumPayload,
     VoiceStateBaseMinimumPayload,
 } from '@/discord/commands/payload';
-import { ClusterableCommandResponse } from '@/discord/commands/types';
 import { Context } from '@/discord';
 import { BaseEventHandler } from '@/discord/eventHandlers/types';
 
@@ -22,14 +21,19 @@ export type APIExecutePayload = {
     name: string;
 } & (CommandBaseMinimumPayload | VoiceStateBaseMinimumPayload);
 
+export type ClusterableCommandResponse = {
+    success: boolean;
+    message: string;
+};
+
 export interface ServerToClientEvents {
     [ClusterRequest.CAN_EXECUTE]: (
         payload: APIExecutePayload,
-        cb: (clientId: string) => void | Promise<void>,
+        cb: (clientId: string) => void,
     ) => void | Promise<void>;
     [ClusterRequest.EXECUTE]: (
         payload: APIExecutePayload,
-        cb: (response: ClusterableCommandResponse) => void | Promise<void>,
+        cb: (response: ClusterableCommandResponse) => void,
     ) => void | Promise<void>;
 }
 

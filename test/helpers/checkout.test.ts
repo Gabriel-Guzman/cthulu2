@@ -1,4 +1,4 @@
-import Checkout from '@/helpers/queue';
+import Checkout from '@/helpers/checkout';
 
 afterEach(() => {
     // restore the spy created with spyOn

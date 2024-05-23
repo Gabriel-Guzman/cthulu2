@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { ClusterableCommand, ClusterableCommandResponse } from '../types';
+import { ClusterableCommand } from '../types';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { findOrCreate, GuildUserInfo } from '@/db';
 import { AQM } from '@/audio/aqm';
@@ -7,6 +7,7 @@ import { buildChildNodeResponse } from '@/cluster/child';
 import { getAffirmativeDialog } from '@/discord/dialog';
 import { areWeInChannel, isUserInVoice } from '@/discord/commands/music/util';
 import { hydrateCommandPayload } from '@/discord/commands/payload';
+import { ClusterableCommandResponse } from '@/cluster/types';
 
 const command: ClusterableCommand = {
     async buildPayload(ctx, evData) {

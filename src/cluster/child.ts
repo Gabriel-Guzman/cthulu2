@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
-import { ClusterableCommandResponse } from '@/discord/commands/types';
 import {
     ClientToServerEvents,
+    ClusterableCommandResponse,
     ClusterRequest,
     ServerToClientEvents,
 } from '@/cluster/types';

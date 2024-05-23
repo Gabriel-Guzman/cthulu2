@@ -1,7 +1,10 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ChatInputCommandInteraction } from 'discord.js';
 import { CommandBaseMinimumPayload } from '@/discord/commands/payload';
-import { ClusterableEventHandler } from '@/cluster/types';
+import {
+    ClusterableCommandResponse,
+    ClusterableEventHandler,
+} from '@/cluster/types';
 import { Context } from '@/discord';
 import { BaseEventHandler } from '@/discord/eventHandlers/types';
 
@@ -19,11 +22,6 @@ export interface ScoMomCommand extends BaseCommand {
 
     execute(interaction: ChatInputCommandInteraction): Promise<void>;
 }
-
-export type ClusterableCommandResponse = {
-    success: boolean;
-    message: string;
-};
 
 export type ClusterableCommand<
     Payload extends CommandBaseMinimumPayload = CommandBaseMinimumPayload,
