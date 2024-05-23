@@ -98,7 +98,7 @@ const intro: ClusterableEventHandler<
             ctx.client,
             payload,
         );
-        if (oldChannel || oldChannel.id) return false;
+        if (oldChannel && oldChannel.id) return false;
         if (!newChannel) {
             console.error('invalid payload in vsu canExecute');
             return false;
