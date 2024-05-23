@@ -16,7 +16,12 @@ import {
 } from '@discordjs/voice';
 
 import Search from '@/audio/search';
-import { EmbedBuilder, TextChannel, VoiceChannel } from 'discord.js';
+import {
+    EmbedBuilder,
+    TextChannel,
+    VoiceBasedChannel,
+    VoiceChannel,
+} from 'discord.js';
 
 interface AudioPayload {
     readonly requestedBy: string;
@@ -284,8 +289,7 @@ class GuildQueue {
 
         player.on(AudioPlayerStatus.Idle, this.idleListener.bind(this));
 
-        player.on('unsubscribe', (subscription) => {
-            console.log('GuildQueue: unsubscribe event from ', subscription);
+        player.on('unsubscribe', () => {
             // this is bad... i guess we'll just set not ready state to get our
             // player in order
             this.setState(QueueState.NOT_READY);
@@ -298,28 +302,29 @@ class GuildQueue {
 class AudioQueueManager {
     queues = new Map<string, GuildQueue>();
 
-    stop(guildId): void {
+    async stop(guildId: string): Promise<void> {
         const gq = this.queues.get(guildId);
         if (gq) {
-            gq.stop();
+            await gq.stop();
+            this.queues.delete(guildId);
         }
     }
 
-    pause(guildId): void {
+    pause(guildId: string): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.pause();
         }
     }
 
-    resume(guildId): void {
+    resume(guildId: string): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.resume();
         }
     }
 
-    skip(guildId): void {
+    skip(guildId: string): void {
         const gq = this.queues.get(guildId);
         if (gq) {
             gq.skip();
@@ -349,14 +354,7 @@ class AudioQueueManager {
         await gq.add(payload);
     }
 
-    getChannelId(guildId: string): string {
-        const gq = this.queues.get(guildId);
-        if (gq) {
-            return gq.connection.joinConfig.channelId;
-        }
-    }
-
-    async playImmediatelySilent(channel, payload) {
+    async playImmediatelySilent(channel: VoiceBasedChannel, payload: Payload) {
         let gq = this.queues.get(channel.guild.id);
         if (gq && gq.getState() === QueueState.PLAYING) {
             return false;
@@ -370,7 +368,7 @@ class AudioQueueManager {
     }
 
     async connectToVoice(
-        channel: VoiceChannel,
+        channel: VoiceBasedChannel,
         guildId: string,
     ): Promise<VoiceConnection> {
         let connection = getVoiceConnection(guildId);
@@ -400,12 +398,11 @@ class AudioQueueManager {
         }
 
         connection.on('debug', (m) => console.debug('vc debug: ' + m));
-
         return connection;
     }
 
     private async newGuildQueue(
-        channel: VoiceChannel,
+        channel: VoiceBasedChannel,
         textChannel: TextChannel,
     ): Promise<GuildQueue> {
         const connection = await this.connectToVoice(channel, channel.guild.id);
@@ -429,8 +426,10 @@ class AudioQueueManager {
                 // Seems to be a real disconnect which SHOULDN'T be recovered from
                 connection.destroy();
                 const queue = this.queues.get(channel.guild.id);
-                await queue.stop();
-                this.queues.delete(channel.guild.id);
+                if (queue) {
+                    await queue.stop();
+                    this.queues.delete(channel.guild.id);
+                }
             }
         });
 

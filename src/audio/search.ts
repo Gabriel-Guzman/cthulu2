@@ -16,12 +16,6 @@ class Search {
             ...opts,
         });
     }
-
-    async searchVideos(query) {
-        return await this.search(query, {
-            type: 'video',
-        });
-    }
 }
 
 export default {
@@ -36,5 +30,3 @@ export default {
         });
     },
 };
-
-// export default new Search(process.env.YOUTUBE_API_KEY, 10);

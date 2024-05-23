@@ -1,23 +1,36 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '../../dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
+import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
+import { GuildMember, VoiceChannel } from 'discord.js';
+import { ClusterableCommand } from '../types';
 import {
-    BaseInteraction,
-    CommandInteraction,
-    GuildMember,
-    InteractionType,
-    VoiceChannel,
-} from 'discord.js';
-import { ScoMomCommand } from '../types';
-import {
+    areWeInChannel,
+    areWeInVoice,
     buildPayload,
-    voiceChannelRestriction,
+    isBotInChannel,
 } from '@/discord/commands/music/util';
+import { buildChildNodeResponse } from '@/cluster/child';
+import {
+    CommandBaseMinimumPayload,
+    hydrateCommandPayload,
+} from '@/discord/commands/payload';
 
-export default {
+// socket io payload
+interface MinimumPayload extends CommandBaseMinimumPayload {
+    query: string;
+}
+
+const command: ClusterableCommand<MinimumPayload> = {
+    async buildPayload(ctx, evData) {
+        return {
+            query: evData.options.getString('query'),
+            guild: evData.guild.id,
+            member: (<GuildMember>evData.member).id,
+        };
+    },
     name: 'queue',
     builder: new SlashCommandBuilder()
         .setName('queue')
@@ -31,17 +44,82 @@ export default {
                     "Query can be a youtube link, spotify link, or search query e.g. 'happy pharrell'",
                 ),
         ),
-    async run(client, interaction: BaseInteraction): Promise<void> {
-        if (!(interaction.type === InteractionType.ApplicationCommand)) {
-            return;
+    async canExecute(ctx, payload): Promise<boolean> {
+        const { member } = await hydrateCommandPayload(ctx.client, payload);
+        if (!member.voice.channel.joinable) return false;
+        const channel = member.voice.channel;
+        if (!areWeInChannel(channel.guildId, channel.id)) {
+            if (isBotInChannel(channel, ctx.client.user.id)) {
+                console.debug('cant join channel because a bot is in it');
+                return false;
+            }
+            if (areWeInVoice(channel.guildId)) {
+                console.debug(
+                    'cant join channel because im in a different one',
+                );
+                return false;
+            }
         }
+        return true;
+    },
+    async execute(ctx, payload) {
+        const { member, guild } = await hydrateCommandPayload(
+            ctx.client,
+            payload,
+        );
+        try {
+            const audioPayload = await buildPayload(
+                ctx,
+                payload.query,
+                payload.member,
+            );
 
-        if (!interaction.isChatInputCommand()) {
-            return;
+            let textChannel;
+            const serverInfo = await findOrCreate(ServerInfo, {
+                guildId: payload.guild,
+            });
+
+            // if there's a channel for bot to spam in this guild
+            if (
+                serverInfo.botReservedTextChannels &&
+                serverInfo.botReservedTextChannels.length
+            ) {
+                textChannel = await guild.channels.fetch(
+                    serverInfo.botReservedTextChannels[0],
+                );
+            }
+
+            for (const payload of audioPayload) {
+                await AQM.queue(
+                    member.voice.channel as VoiceChannel,
+                    textChannel,
+                    payload,
+                );
+            }
+
+            const userInfo = await findOrCreate(GuildUserInfo, {
+                userId: member.id,
+                guildId: guild.id,
+            });
+
+            return buildChildNodeResponse(
+                true,
+                getAffirmativeDialog('queue', member, userInfo),
+            );
+        } catch (e) {
+            console.error(e);
+            if (e.body && e.body.error && e.body.error.status === 404) {
+                return buildChildNodeResponse(false, 'not found :(');
+            }
+            return buildChildNodeResponse(
+                false,
+                'error queueing song: ' + e.message,
+            );
         }
+    },
 
-        const query = interaction.options.getString('query');
-        const member = <GuildMember>interaction.member;
+    async validate(ctx, interaction): Promise<boolean> {
+        const member = interaction.member as GuildMember;
         const voiceChannel = member.voice.channel;
 
         if (!voiceChannel) {
@@ -49,62 +127,10 @@ export default {
                 content: 'Must be in a voice channel to play music',
                 ephemeral: true,
             });
-            return;
+            return false;
         }
-
-        if (
-            !member.voice ||
-            !voiceChannelRestriction(
-                interaction.guildId,
-                member.voice?.channel.id,
-            )
-        ) {
-            await interaction.reply({
-                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
-                ephemeral: true,
-            });
-            return;
-        }
-
-        try {
-            const payload = await buildPayload(query, member.id);
-
-            let textChannel;
-            const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
-                guildId: interaction.guild.id,
-            });
-            if (
-                serverInfo.botReservedTextChannels &&
-                serverInfo.botReservedTextChannels.length
-            ) {
-                textChannel = await interaction.guild.channels.fetch(
-                    serverInfo.botReservedTextChannels[0],
-                );
-            }
-
-            await AQM.queue(voiceChannel as VoiceChannel, textChannel, payload);
-
-            const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-                userId: member.id,
-                guildId: interaction.guild.id,
-            });
-            await interaction.reply(
-                getAffirmativeDialog('queue', member, userInfo),
-            );
-            return;
-        } catch (e) {
-            console.error(e);
-            if (e.body && e.body.error && e.body.error.status === 404) {
-                await interaction.reply({
-                    content: 'not found :(',
-                    ephemeral: true,
-                });
-                return;
-            }
-            await interaction.reply({
-                content: 'error queueing song: ' + e.message,
-            });
-            return;
-        }
+        return true;
     },
-} as ScoMomCommand<CommandInteraction>;
+};
+
+export default command;

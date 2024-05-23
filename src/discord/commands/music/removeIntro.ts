@@ -1,15 +1,10 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { getAffirmativeDialog } from '@/discord/dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo, ServerInfo } from '@/db';
+import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
 // @ts-ignore
 import ytdl from 'ytdl-core';
 import { ScoMomCommand } from '../types';
-import {
-    CommandInteraction,
-    GuildMember,
-    Interaction,
-    InteractionType,
-} from 'discord.js';
+import { GuildMember } from 'discord.js';
 
 export default {
     name: 'remove intro',
@@ -17,16 +12,10 @@ export default {
         .setName('remove-intro')
         .setDescription('Remove your intro music. Cannot be undone.')
         .setDMPermission(false),
-    async run(client, interaction: Interaction) {
-        if (
-            !interaction.isChatInputCommand() ||
-            !(interaction.type === InteractionType.ApplicationCommand)
-        ) {
-            return;
-        }
+    async execute(interaction) {
         const member = <GuildMember>interaction.member;
 
-        const serverInfo = await cachedFindOneOrUpsert(ServerInfo, {
+        const serverInfo = await findOrCreate(ServerInfo, {
             guildId: interaction.guild.id,
         });
         if (serverInfo.intros) {
@@ -34,7 +23,7 @@ export default {
         }
 
         await serverInfo.save();
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
+        const userInfo = await findOrCreate(GuildUserInfo, {
             userId: member.id,
             guildId: interaction.guild.id,
         });
@@ -42,4 +31,4 @@ export default {
             getAffirmativeDialog('removeIntro', member, userInfo),
         );
     },
-} as ScoMomCommand<CommandInteraction>;
+} as ScoMomCommand;

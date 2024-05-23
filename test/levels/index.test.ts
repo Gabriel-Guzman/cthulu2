@@ -1,4 +1,7 @@
 import { calculateLevel, incrementUserXp } from '@/levels';
+import { IGuildUserInfo } from '@/db';
+import { HydratedDocument } from 'mongoose';
+import { GuildMember, TextChannel } from 'discord.js';
 
 describe('levels', () => {
     describe('calculateLevel', () => {
@@ -17,12 +20,16 @@ describe('levels', () => {
                 save: jest.fn(),
                 xp: 83,
                 lastLevelCongratulated: 1,
-            };
+            } as unknown as HydratedDocument<IGuildUserInfo>;
             const channel = {
                 send: jest.fn(),
             };
-            // @ts-ignore
-            await incrementUserXp(userInfo, {}, channel, 9);
+            await incrementUserXp(
+                userInfo,
+                {} as unknown as GuildMember,
+                channel as unknown as TextChannel,
+                9,
+            );
             expect(userInfo.save).toHaveBeenCalledTimes(1);
             expect(channel.send).toHaveBeenCalledTimes(1);
         });

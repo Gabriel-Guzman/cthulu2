@@ -1,44 +1,59 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '@/discord/dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
-import { ScoMomCommand } from '../types';
-import { CommandInteraction, GuildMember } from 'discord.js';
-import { voiceChannelRestriction } from '@/discord/commands/music/util';
+import { findOrCreate, GuildUserInfo } from '@/db';
+import { ClusterableCommand } from '../types';
+import { GuildMember } from 'discord.js';
+import { areWeInChannel } from '@/discord/commands/music/util';
+import {
+    clusterToBase,
+    hydrateCommandPayload,
+} from '@/discord/commands/payload';
 
-export default {
+const command: ClusterableCommand = {
     name: 'skip',
     builder: new SlashCommandBuilder()
         .setName('skip')
         .setDescription('Skip the current song')
         .setDMPermission(false),
-    async run(client, interaction: CommandInteraction) {
-        const member = interaction.member as GuildMember;
-        if (
-            !member.voice ||
-            !voiceChannelRestriction(
-                interaction.guildId,
-                member.voice?.channel.id,
-            )
-        ) {
+    async buildPayload(ctx, evData) {
+        return {
+            member: (<GuildMember>evData.member).id,
+            guild: evData.guild.id,
+        };
+    },
+    async canExecute(ctx, payload) {
+        const { member } = await hydrateCommandPayload(ctx.client, payload);
+        return areWeInChannel(payload.guild, member.voice.channel.id);
+    },
+    async validate(ctx, interaction) {
+        const member = <GuildMember>interaction.member;
+        if (!member.voice?.channel) {
             await interaction.reply({
-                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
+                content: 'you MUST be in a voice channel to control music',
                 ephemeral: true,
             });
-            return;
+            return false;
         }
 
-        AQM.skip(interaction.guild.id);
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-            userId: (interaction.member as GuildMember).id,
-            guildId: interaction.guild.id,
+        return true;
+    },
+    async execute(interaction, minPayload) {
+        const payload = await clusterToBase(interaction.client, minPayload);
+        AQM.skip(payload.guild.id);
+        const userInfo = await findOrCreate(GuildUserInfo, {
+            userId: (payload.member as GuildMember).id,
+            guildId: payload.guild.id,
         });
-        await interaction.reply(
-            getAffirmativeDialog(
+        return {
+            success: true,
+            message: getAffirmativeDialog(
                 'skip',
-                interaction.member as GuildMember,
+                payload.member as GuildMember,
                 userInfo,
             ),
-        );
+        };
     },
-} as ScoMomCommand<CommandInteraction>;
+};
+
+export default command;

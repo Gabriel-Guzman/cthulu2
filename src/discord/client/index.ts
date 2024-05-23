@@ -1,20 +1,28 @@
 // require the discord.js module
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import {
+    Client,
+    ClientOptions,
+    Collection,
+    GatewayIntentBits,
+    Partials,
+} from 'discord.js';
+import { ClusterableCommand, ScoMomCommand } from '@/discord/commands/types';
 
 class ExtendedClient extends Client {
-    commands: Collection<string, any>;
+    simpleCommands: Collection<string, ScoMomCommand>;
+    clusterableCommands: Collection<string, ClusterableCommand>;
 
-    constructor(opts) {
+    constructor(opts: ClientOptions) {
         super(opts);
-        this.commands = new Collection();
+        this.simpleCommands = new Collection();
+        this.clusterableCommands = new Collection();
     }
 }
 
 export type IExtendedClient = ExtendedClient;
 
-export default function createClient(): ExtendedClient {
-    // create a new Discord client
-    const client = new ExtendedClient({
+export default async function createClient(): Promise<IExtendedClient> {
+    const discordOpts = {
         http: { api: 'https://discord.com/api' },
         intents: [
             GatewayIntentBits.Guilds,
@@ -24,8 +32,11 @@ export default function createClient(): ExtendedClient {
             GatewayIntentBits.GuildVoiceStates,
             GatewayIntentBits.GuildMessageReactions,
         ],
-        partials: ['MESSAGE', 'REACTION', 'CHANNEL'],
-    });
+        partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+    };
+
+    // create a new Discord client
+    const client: IExtendedClient = new ExtendedClient(discordOpts);
 
     client.on('warn', console.warn);
 

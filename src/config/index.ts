@@ -1,3 +1,8 @@
+export enum ClusteringRole {
+    CHILD = 'CHILD',
+    MOTHER = 'MOTHER',
+}
+
 export default {
     levels: {
         xpGain: {
@@ -5,5 +10,9 @@ export default {
                 messageCreate: 5,
             },
         },
+    },
+    clustering: {
+        role: process.env.ROLE as ClusteringRole,
+        childMessageTimeout: 5000, // ms
     },
 };

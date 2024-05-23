@@ -1,9 +1,36 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Client } from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
+import { CommandBaseMinimumPayload } from '@/discord/commands/payload';
+import { ClusterableEventHandler } from '@/cluster/types';
+import { Context } from '@/discord';
+import { BaseEventHandler } from '@/discord/eventHandlers/types';
 
-export interface ScoMomCommand<T, J = void> {
-    name: string;
-    builder: SlashCommandBuilder;
-    run(client: Client, param: T): Promise<void>;
-    run(client: Client, params: [T, J]): Promise<void>;
+export interface BaseCommand extends BaseEventHandler {
+    builder:
+        | SlashCommandBuilder
+        | Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>;
 }
+
+export interface ScoMomCommand extends BaseCommand {
+    validate(
+        ctx: Context,
+        evData: ChatInputCommandInteraction,
+    ): Promise<boolean>;
+
+    execute(interaction: ChatInputCommandInteraction): Promise<void>;
+}
+
+export type ClusterableCommandResponse = {
+    success: boolean;
+    message: string;
+};
+
+export type ClusterableCommand<
+    Payload extends CommandBaseMinimumPayload = CommandBaseMinimumPayload,
+> = ClusterableEventHandler<
+    ChatInputCommandInteraction,
+    Context,
+    Payload,
+    ClusterableCommandResponse
+> &
+    BaseCommand;

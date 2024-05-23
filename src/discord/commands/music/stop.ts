@@ -1,40 +1,53 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
+import { ClusterableCommand } from '../types';
+import { GuildMember } from 'discord.js';
+import { hydrateCommandPayload } from '@/discord/commands/payload';
+import { areWeInChannel } from '@/discord/commands/music/util';
+import { findOrCreate, GuildUserInfo } from '@/db';
+import { getAffirmativeDialog } from '@/discord/dialog';
 import { AQM } from '@/audio/aqm';
-import { getAffirmativeDialog } from '../../dialog';
-import { cachedFindOneOrUpsert, GuildUserInfo } from '@/db';
-import { ScoMomCommand } from '../types';
-import { CommandInteraction, GuildMember } from 'discord.js';
-import { voiceChannelRestriction } from '@/discord/commands/music/util';
+import { buildChildNodeResponse } from '@/cluster/child';
 
-export default {
+const command: ClusterableCommand = {
+    async buildPayload(ctx, evData) {
+        return {
+            guild: evData.guild.id,
+            member: (<GuildMember>evData.member).id,
+        };
+    },
+    async canExecute(ctx, param): Promise<boolean> {
+        const { member } = await hydrateCommandPayload(ctx.client, param);
+        return areWeInChannel(param.guild, member.voice.channel.id);
+    },
+    async execute(client, param) {
+        await AQM.stop(param.guild);
+        const userInfo = await findOrCreate(GuildUserInfo, {
+            userId: param.member,
+            guildId: param.guild,
+        });
+        const { member } = await hydrateCommandPayload(client.client, param);
+        return buildChildNodeResponse(
+            true,
+            getAffirmativeDialog('stop', member, userInfo),
+        );
+    },
+    async validate(ctx, interaction) {
+        const member = <GuildMember>interaction.member;
+        if (!member.voice?.channel) {
+            await interaction.reply({
+                content: 'you MUST be in a voice channel to control music',
+                ephemeral: true,
+            });
+            return false;
+        }
+
+        return true;
+    },
     name: 'stop',
     builder: new SlashCommandBuilder()
         .setName('stop')
         .setDescription('Stop the music.. you sure?')
         .setDMPermission(false),
-    async run(client, interaction) {
-        const member = interaction.member as GuildMember;
-        if (
-            !member.voice ||
-            !voiceChannelRestriction(
-                interaction.guildId,
-                member.voice?.channel.id,
-            )
-        ) {
-            await interaction.reply({
-                content: 'NOT ALLOWED HAHA.. stick to your own voice channel',
-                ephemeral: true,
-            });
-            return;
-        }
+};
 
-        AQM.stop(interaction.guild.id);
-        const userInfo = await cachedFindOneOrUpsert(GuildUserInfo, {
-            userId: interaction.member.id,
-            guildId: interaction.guild.id,
-        });
-        return interaction.reply(
-            getAffirmativeDialog('stop', interaction.member, userInfo),
-        );
-    },
-} as ScoMomCommand<CommandInteraction>;
+export default command;

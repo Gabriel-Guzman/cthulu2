@@ -1,6 +1,6 @@
 import { GuildMember } from 'discord.js';
 import {
-    cachedFindOneOrUpsert,
+    findOrCreate,
     GuildUserInfo,
     IGuildUserInfo,
     IServerInfo,
@@ -26,11 +26,11 @@ type GuildMemberAddContext = {
 
 async function buildCtx(member: GuildMember): Promise<GuildMemberAddContext> {
     return {
-        guildUserInfo: await cachedFindOneOrUpsert(GuildUserInfo, {
+        guildUserInfo: await findOrCreate(GuildUserInfo, {
             userId: member.id,
             guildId: member.guild.id,
         }),
-        serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
+        serverInfo: await findOrCreate(ServerInfo, {
             guildId: member.guild.id,
         }),
     };

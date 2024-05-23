@@ -1,31 +1,14 @@
 import queue from '@/discord/commands/music/queue';
 import * as aqm from '@/audio/aqm';
 import * as db from '@/db';
+import { IGuildUserInfo, IServerInfo } from '@/db';
 import * as utils from '@/discord/commands/music/util';
 import * as dialog from '@/discord/dialog';
-import { InteractionType } from 'discord.js';
-
-const mockedInteraction = () => {
-    const member = {
-        voice: { channel: 'voicechannel' },
-    };
-    return {
-        isApplicationCommand: jest.fn(),
-        isCommand: jest.fn(),
-        type: InteractionType.ApplicationCommand,
-
-        options: {
-            getString: jest.fn(),
-        },
-        member,
-        reply: jest.fn(),
-        guild: {
-            channels: {
-                fetch: jest.fn(),
-            },
-        },
-    };
-};
+import * as payload from '@/discord/commands/payload';
+import { CommandBasePayload } from '@/discord/commands/payload';
+import { ChatInputCommandInteraction, InteractionType } from 'discord.js';
+import { HydratedDocument } from 'mongoose';
+import { Context } from '@/discord';
 
 afterEach(() => {
     // restore the spy created with spyOn
@@ -52,12 +35,10 @@ describe('queue.run', () => {
                 },
             },
         };
-
-        // @ts-ignore
-        await queue.run(member, interaction);
-        expect(interaction.isChatInputCommand).toHaveBeenCalledTimes(1);
-        expect(interaction.options.getString).toHaveBeenCalledTimes(1);
-        expect(interaction.options.getString).toHaveBeenCalledWith('query');
+        await queue.validate(
+            {} as unknown as Context,
+            interaction as unknown as ChatInputCommandInteraction,
+        );
         expect(interaction.reply).toHaveBeenCalledWith(
             expect.objectContaining({
                 content: expect.anything(),
@@ -65,7 +46,7 @@ describe('queue.run', () => {
             }),
         );
     });
-    it('should queue the music and tell the user', async () => {
+    it('should queue the music', async () => {
         const member = {
             id: 'member_id',
             voice: { channel: { id: 'voice_channel_id' } },
@@ -79,6 +60,7 @@ describe('queue.run', () => {
             member,
             reply: jest.fn(),
             guild: {
+                id: '124',
                 channels: {
                     fetch: jest.fn().mockReturnValueOnce('123'),
                 },
@@ -91,32 +73,51 @@ describe('queue.run', () => {
 
         const buildPayloadSpy = jest
             .spyOn(utils, 'buildPayload')
-            .mockImplementation(
-                async () =>
-                    new aqm.YoutubePayload('url', 'title', member.id, ''),
-            );
+            .mockImplementation(async () => [
+                new aqm.YoutubePayload('url', 'title', member.id, ''),
+            ]);
 
         const findOneSpy = jest
-            .spyOn(db, 'cachedFindOneOrUpsert')
-            // @ts-ignore
-            .mockImplementationOnce(async () => ({
-                guildId: '123',
-            }))
-
-            // @ts-ignore
-            .mockImplementationOnce(async () => ({ userId: '123' }));
+            .spyOn(db, 'findOrCreate')
+            .mockImplementationOnce(
+                async () =>
+                    ({
+                        guildId: '123',
+                    } as unknown as Promise<HydratedDocument<IServerInfo>>),
+            )
+            .mockImplementationOnce(
+                async () =>
+                    ({ userId: '123' } as unknown as Promise<
+                        HydratedDocument<IGuildUserInfo>
+                    >),
+            );
 
         const dialogSpy = jest
             .spyOn(dialog, 'getAffirmativeDialog')
             .mockImplementation(() => 'asdfalkjsdf');
 
-        // @ts-ignore
-        await queue.run(undefined, interaction);
+        jest.spyOn(payload, 'hydrateCommandPayload').mockImplementation(
+            async () =>
+                ({
+                    member,
+                    guild: interaction.guild,
+                } as unknown as CommandBasePayload),
+        );
+
+        const client = {};
+        await queue.execute({ client } as unknown as Context, {
+            member: member.id,
+            guild: interaction.guild.id,
+            query: 'happy',
+        });
 
         expect(findOneSpy).toHaveBeenCalledTimes(2);
-        expect(buildPayloadSpy).toHaveBeenCalledWith('happy', member.id);
+        expect(buildPayloadSpy).toHaveBeenCalledWith(
+            { client },
+            'happy',
+            member.id,
+        );
         expect(aqmQueueSpy).toHaveBeenCalledTimes(1);
-        expect(interaction.reply).toHaveBeenCalledTimes(1);
         expect(dialogSpy).toHaveBeenCalledTimes(1);
         expect(dialogSpy).toHaveBeenCalledWith('queue', interaction.member, {
             userId: '123',

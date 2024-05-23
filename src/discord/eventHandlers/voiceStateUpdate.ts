@@ -1,29 +1,42 @@
-import { IExtendedClient } from '../client';
-import { VoiceChannel, VoiceState } from 'discord.js';
-import { getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
+import { Collection, VoiceChannel, VoiceState } from 'discord.js';
+import { getVoiceConnection } from '@discordjs/voice';
 import { AQM, YoutubePayload } from '@/audio/aqm';
 import { HydratedDocument } from 'mongoose';
-import { cachedFindOneOrUpsert, IServerInfo, ServerInfo } from '@/db';
+import { findOrCreate, IServerInfo, ServerInfo } from '@/db';
+import { Context, MotherContext } from '@/discord';
+import {
+    ClusterableEventHandler,
+    ClusterRequestNamespace,
+} from '@/cluster/types';
+import {
+    hydrateVoiceStatePayload,
+    VoiceStateBaseMinimumPayload,
+} from '@/discord/commands/payload';
+import {
+    areWeInChannel,
+    areWeInVoice,
+    isBotInChannel,
+} from '@/discord/commands/music/util';
 
-async function lonely(
-    ctx: VoiceStateUpdateCtx,
-    oldState: VoiceState,
-    newState: VoiceState,
-): Promise<void> {
-    const voiceChannelId = newState.channelId;
-    const guildId = newState.guild.id;
-    if (!newState.channelId) {
-        return;
-    }
+type VoiceStateHandlerParam = {
+    oldState: VoiceState;
+    newState: VoiceState;
+};
+
+// Behavior: When someone leaves a voice channel, leave our voice channel
+// if we're alone in it.
+export async function lonely(evData: VoiceStateHandlerParam): Promise<void> {
+    const { oldState, newState } = evData;
+    const guildId = oldState.guild.id || newState.guild.id;
     if (newState.member.user.bot) {
         return;
     }
 
     const voiceConnection = getVoiceConnection(guildId);
-
     if (!voiceConnection) {
         return;
     }
+
     const currentChannelId = voiceConnection.joinConfig.channelId;
     if (!currentChannelId) {
         return;
@@ -37,65 +50,138 @@ async function lonely(
     // if no one else is with us
     if (membersInCurrentChannel === 1) {
         // kill voice connection and queue
+        await AQM.stop(guildId);
         voiceConnection.disconnect();
-
-        const newChannel = await newState.guild.channels.fetch(voiceChannelId);
-        if (newChannel.name.toLowerCase().includes('afk')) {
-            return;
-        }
-        // join new one
-        joinVoiceChannel({
-            channelId: voiceChannelId,
-            guildId: guildId,
-            // @ts-ignore
-            adapterCreator: newState.guild.voiceAdapterCreator,
-        });
     }
 }
 
-export async function intro(
-    ctx: VoiceStateUpdateCtx,
-    oldState: VoiceState,
-    newState: VoiceState,
-): Promise<void> {
-    if (!newState.channel) return;
-    if (oldState.channel) return;
-
-    const voiceChannel = newState.channel;
-    if (!voiceChannel.joinable) return;
-
-    const memberId = newState.member.id;
-
-    const introSongUrl = ctx.serverInfo.intros.get(memberId);
-    if (!introSongUrl) return;
-
-    try {
-        await AQM.playImmediatelySilent(
-            voiceChannel,
-            new YoutubePayload(introSongUrl, '', '', ''),
+const intro: ClusterableEventHandler<
+    VoiceStateHandlerParam,
+    Context,
+    VoiceStateBaseMinimumPayload
+> = {
+    name: 'intro',
+    async execute(ctx, payload): Promise<void> {
+        const { guild: guildId, newChannel, member } = payload;
+        const guild = await ctx.client.guilds.fetch(guildId);
+        const voiceChannel = <VoiceChannel>(
+            await guild.channels.fetch(newChannel)
         );
-    } catch (error) {
-        console.error(error);
-    }
-}
+
+        const serverInfo = await findOrCreate(ServerInfo, {
+            guildId: payload.guild,
+        });
+        const songUrl = serverInfo.intros.get(member);
+
+        try {
+            await AQM.playImmediatelySilent(
+                voiceChannel,
+                new YoutubePayload(songUrl, '', '', ''),
+            );
+        } catch (error) {
+            console.error(error);
+        }
+    },
+    async validate(ctx, evData) {
+        const { oldState, newState } = evData;
+        if (!newState.channel?.id) return false;
+        if (oldState?.channel?.id) return false;
+
+        const serverInfo = await findOrCreate(ServerInfo, {
+            guildId: newState.guild.id,
+        });
+        const introSongUrl = serverInfo.intros.get(newState.member.id);
+        return !!introSongUrl;
+    },
+    async canExecute(ctx, payload) {
+        const { newChannel } = await hydrateVoiceStatePayload(
+            ctx.client,
+            payload,
+        );
+        if (!newChannel) {
+            console.error('invalid payload in vsu canExecute');
+            return false;
+        }
+        if (!newChannel.joinable) {
+            console.error('channel is not joinable');
+            return false;
+        }
+        if (!areWeInChannel(newChannel.guildId, newChannel.id)) {
+            if (isBotInChannel(newChannel, ctx.client.user.id)) {
+                console.error('cant join channel because a bot is in it');
+                return false;
+            }
+            if (areWeInVoice(newChannel.guildId)) {
+                return false;
+            }
+        }
+        return true;
+    },
+    async buildPayload(ctx, evData) {
+        const { newState } = evData;
+        return {
+            newChannel: newState.channelId,
+            guild: newState.guild.id,
+            member: newState.member.id,
+        };
+    },
+};
 
 type VoiceStateUpdateCtx = {
     serverInfo: HydratedDocument<IServerInfo>;
-};
+} & Context;
+
+export const globalSimpleHandlers = [lonely];
 
 export default async function handleVoiceStateUpdate(
-    client: IExtendedClient,
+    context: MotherContext,
     oldState: VoiceState,
     newState: VoiceState,
 ): Promise<void> {
     if (oldState.member.user.bot) return;
-    const ctx: VoiceStateUpdateCtx = {
-        serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
-            guildId: newState.guild?.id || oldState.guild?.id,
-        }),
-    };
-    await Promise.all([
-        // lonely(ctx, oldState, newState),
-        intro(ctx, oldState, newState),
-    ]);
+    // const ctx: VoiceStateUpdateCtx = await buildVoiceStateUpdateCtx(
+    //     context,
+    //     oldState?.guild.id || newState?.guild.id,
+    // );
+    const ctx = context;
+    const simpleHandlersPromise = Promise.all([lonely({ oldState, newState })]);
+
+    const clusterableHandlers = [intro];
+    const clusterableHandlersPromise = clusterableHandlers.map(
+        (h) =>
+            new Promise<void>(async (res) => {
+                const isValid = h.validate(ctx, { oldState, newState });
+                if (!isValid) return;
+                const p = await h.buildPayload(ctx, {
+                    oldState,
+                    newState,
+                });
+                if (await h.canExecute(ctx, p)) {
+                    await h.execute(ctx, p);
+                } else {
+                    await context.motherServer.delegate(
+                        context,
+                        ClusterRequestNamespace.VOICE_STATE_UPDATE,
+                        h.name,
+                        p,
+                        oldState?.guild.id || newState.guild?.id,
+                    );
+                }
+                res();
+            }),
+    );
+    await Promise.all([simpleHandlersPromise, clusterableHandlersPromise]);
+}
+
+export function getClusterableVoiceStateHandlers() {
+    const handlers = new Collection<
+        string,
+        ClusterableEventHandler<
+            VoiceStateHandlerParam,
+            VoiceStateUpdateCtx,
+            VoiceStateBaseMinimumPayload
+        >
+    >();
+    handlers.set('intro', intro);
+    return handlers;
 }

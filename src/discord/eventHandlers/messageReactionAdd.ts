@@ -1,6 +1,6 @@
 import { ChannelType, MessageReaction, User } from 'discord.js';
 import {
-    cachedFindOneOrUpsert,
+    findOrCreate,
     GuildUserInfo,
     IGuildUserInfo,
     IServerInfo,
@@ -40,11 +40,11 @@ async function buildCtx(reaction: MessageReaction, user: User) {
         return { isDM: true };
     }
     return {
-        guildUserInfo: await cachedFindOneOrUpsert(GuildUserInfo, {
+        guildUserInfo: await findOrCreate(GuildUserInfo, {
             userId: (await reaction.message.guild.members.fetch(user)).id,
             guildId: reaction.message.channel.guild.id,
         }),
-        serverInfo: await cachedFindOneOrUpsert(ServerInfo, {
+        serverInfo: await findOrCreate(ServerInfo, {
             guildId: reaction.message.guild.id,
         }),
         isDM: false,

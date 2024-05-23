@@ -1,15 +1,13 @@
 // noinspection HttpUrlsUsage
 
-import {
-    AQM,
-    Payload,
-    UnsoughtYoutubePayload,
-    YoutubePayload,
-} from '@/audio/aqm';
+import { Payload, UnsoughtYoutubePayload, YoutubePayload } from '@/audio/aqm';
 import Search from '@/audio/search';
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
 import ytdl from 'ytdl-core';
 import Spotify, { confirmCredentials } from '@/discord/spotify';
+import { Context } from '@/discord';
+import { GuildChannel, GuildMember } from 'discord.js';
+import { getVoiceConnection } from '@discordjs/voice';
 
 function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     try {
@@ -19,23 +17,41 @@ function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     }
 }
 
-export function voiceChannelRestriction(
-    guildId: string,
-    channelId: string,
-): boolean {
-    if (AQM.getChannelId(guildId) && AQM.getChannelId(guildId) !== channelId) {
-        return false;
-    } else if (!channelId) {
+export function areWeInChannel(guildId: string, channelId: string) {
+    const ourChannel = getVoiceConnection(guildId)?.joinConfig.channelId;
+    if (!ourChannel) {
         return false;
     }
+    return ourChannel === channelId;
+}
 
-    return true;
+export function isUserInVoice(member: GuildMember) {
+    return !!member.voice?.channel?.id;
+}
+
+export function areWeInVoice(guildId): boolean {
+    const ourChannel = getVoiceConnection(guildId);
+    return !!ourChannel;
+}
+
+export function isBotInChannel(
+    channel: GuildChannel,
+    exclude: string,
+): boolean {
+    const members = channel.members;
+    for (const [_, member] of members) {
+        if (member.user.bot && member.user.id !== exclude) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export async function buildPayload(
+    ctx: Context,
     query: string,
     requestedBy: string,
-): Promise<Payload> {
+): Promise<Array<Payload>> {
     const firstWord = query.trim().split(' ')[0];
     const fullArgs = query;
 
@@ -46,7 +62,7 @@ export async function buildPayload(
     const spotify = Spotify();
 
     if (parsed) {
-        await confirmCredentials(spotify);
+        await confirmCredentials(ctx, spotify);
 
         switch (parsed.type) {
             case 'track':
@@ -62,17 +78,28 @@ export async function buildPayload(
                 if (!result || result.length === 0) {
                     throw new Error("i couldn't find that on youtube :(");
                 }
-                return new YoutubePayload(
-                    result[0].link,
-                    result[0].title,
-                    requestedBy,
-                    result[0].thumbnails.default,
-                );
+                return [
+                    new YoutubePayload(
+                        result[0].link,
+                        result[0].title,
+                        requestedBy,
+                        result[0].thumbnails.default,
+                    ),
+                ];
             case 'playlist':
                 const castedPlaylist = parsed as Playlist;
-                const playlistResp = await spotify.getPlaylist(
-                    castedPlaylist.id,
-                );
+                const playlistResp: {
+                    body: {
+                        tracks: {
+                            items: Array<{
+                                track: {
+                                    name: string;
+                                    artists: Array<{ name: string }>;
+                                };
+                            }>;
+                        };
+                    };
+                } = await spotify.getPlaylist(castedPlaylist.id);
 
                 const playlist = playlistResp.body;
                 const queries = playlist.tracks.items.map(
@@ -86,7 +113,14 @@ export async function buildPayload(
                 );
             case 'album':
                 const castedAlbum = parsed as Album;
-                const albumResp = await spotify.getAlbumTracks(castedAlbum.id);
+                const albumResp: {
+                    body: {
+                        items: Array<{
+                            name: string;
+                            artists: Array<{ name: string }>;
+                        }>;
+                    };
+                } = await spotify.getAlbumTracks(castedAlbum.id);
 
                 const album = albumResp.body;
                 const albumQueries = album.items.map(
@@ -112,38 +146,26 @@ export async function buildPayload(
             if (!result || result.length === 0) {
                 throw new Error("i couldn't find that on youtube :(");
             }
-            return new YoutubePayload(
-                result[0].link,
-                result[0].title,
-                requestedBy,
-                result[0].thumbnails.default,
-            );
+            return [
+                new YoutubePayload(
+                    result[0].link,
+                    result[0].title,
+                    requestedBy,
+                    result[0].thumbnails.default,
+                ),
+            ];
         } else {
             const songInfo = await ytdl.getInfo(
                 firstWord.replace('https://', 'http://'),
             );
-            return new YoutubePayload(
-                songInfo.videoDetails.video_url,
-                songInfo.videoDetails.title,
-                requestedBy,
-                songInfo.thumbnail_url,
-            );
+            return [
+                new YoutubePayload(
+                    songInfo.videoDetails.video_url,
+                    songInfo.videoDetails.title,
+                    requestedBy,
+                    songInfo.thumbnail_url,
+                ),
+            ];
         }
     }
 }
-
-// export function ensureVoiceConnectionTo(
-//     guildId: string,
-//     channel: VoiceChannel
-// ): VoiceConnection {
-//     const connection = getVoiceConnection(guildId);
-//     if (connection) return connection;
-//
-//     const newConnection = joinVoiceChannel({
-//         guildId,
-//         channelId: channel.id,
-//         adapterCreator: channel.guild.voiceAdapterCreator,
-//     });
-//
-//
-// }
