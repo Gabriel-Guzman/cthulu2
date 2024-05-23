@@ -246,7 +246,7 @@ class GuildQueue {
 
     private autoPausedListener() {
         this.textChannel
-            ?.send('i have been autopaused...')
+            ?.send('i stopped playing music i think')
             .catch(console.error);
     }
 

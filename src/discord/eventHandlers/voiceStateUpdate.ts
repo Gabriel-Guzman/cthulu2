@@ -94,10 +94,11 @@ const intro: ClusterableEventHandler<
         return !!introSongUrl;
     },
     async canExecute(ctx, payload) {
-        const { newChannel } = await hydrateVoiceStatePayload(
+        const { newChannel, oldChannel } = await hydrateVoiceStatePayload(
             ctx.client,
             payload,
         );
+        if (oldChannel || oldChannel.id) return false;
         if (!newChannel) {
             console.error('invalid payload in vsu canExecute');
             return false;

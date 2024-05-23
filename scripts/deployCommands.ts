@@ -69,8 +69,9 @@ Promise.all(
             );
             const client: IExtendedClient = await createClient();
             await client.login(app.env_production.DISCORD_API_TOKEN);
-            await rest.delete(
-                Routes.applicationCommands(client.application.id),
+            await rest.put(
+                // @ts-ignore-next-line
+                Routes.applicationCommands(client.application.id, { body: [] }),
             );
         }
     }),
