@@ -151,7 +151,7 @@ export default async function handleVoiceStateUpdate(
     const clusterableHandlersPromise = clusterableHandlers.map(
         (h) =>
             new Promise<void>(async (res) => {
-                const isValid = h.validate(ctx, { oldState, newState });
+                const isValid = await h.validate(ctx, { oldState, newState });
                 if (!isValid) return;
                 const p = await h.buildPayload(ctx, {
                     oldState,

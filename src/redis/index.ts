@@ -34,7 +34,7 @@ export class ScoRedis implements IMemory<string, object> {
     async get<R>(key: string): Promise<R | string> {
         const res = await this._client.get(key);
         if (res?.length) {
-            if (res[0] === '{') {
+            if (res[0] === '{' || res[0] === '[') {
                 return JSON.parse(res) as R;
             } else {
                 return res;
