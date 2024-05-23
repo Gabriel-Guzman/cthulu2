@@ -55,7 +55,7 @@ async function handleCommands(
         // check if we can run it
         const payload = await clusterableCommand.buildPayload(ctx, interaction);
 
-        if ((await clusterableCommand.canExecute(ctx, payload)) && false) {
+        if (await clusterableCommand.canExecute(ctx, payload)) {
             console.debug(
                 'executing clusterable command as leader',
                 clusterableCommand.name,

@@ -89,7 +89,7 @@ export class ClusterMotherManager {
                 });
 
             console.timeEnd('execute');
-            console.timeEnd('delegating');
+            console.timeEnd('delegation');
             console.debug('received', res);
             return {
                 ...res,
