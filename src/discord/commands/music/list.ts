@@ -59,37 +59,39 @@ const command: ClusterableCommand = {
 
         const chunks = chunk(list, 5);
 
-        const pages: EmbedBuilder[] = chunks.map((tracks) => {
-            const SongsDescription = tracks
-                .map((t: IAudioPayload, index) => {
-                    return `\`${
-                        index + 1
-                    }.\` [${t.getTitle()}](${t.getLink()}) \n\ requested by: <@${
-                        t.requestedBy
-                    }>\n`;
-                })
-                .join('\n');
+        const pages: EmbedBuilder[] = await Promise.all(
+            chunks.map(async (tracks) => {
+                const SongsDescription = tracks
+                    .map((t: IAudioPayload, index) => {
+                        return `\`${
+                            index + 1
+                        }.\` [${t.getTitle()}](${t.getLink()}) \n\ requested by: <@${
+                            t.requestedBy
+                        }>\n`;
+                    })
+                    .join('\n');
 
-            return (
-                new EmbedBuilder()
-                    // .setAuthor('Queue', client.application.iconURL())
-                    .setAuthor({
-                        name: 'Queue',
-                        iconURL: context.client.application.iconURL(),
-                    })
-                    .setDescription(
-                        `**currently playing:** \n[${gq
-                            .nowPlaying()
-                            .getTitle()}](${gq
-                            .nowPlaying()
-                            .getLink()}) \n\n**up next:** \n${SongsDescription}\n\n`,
-                    )
-                    .addFields({
-                        name: 'queue length: ',
-                        value: gq.payloads.length.toString(),
-                    })
-            );
-        });
+                return (
+                    new EmbedBuilder()
+                        // .setAuthor('Queue', client.application.iconURL())
+                        .setAuthor({
+                            name: 'queue',
+                            iconURL: context.client.application.iconURL(),
+                        })
+                        .setDescription(
+                            `**currently playing:** \n[${await gq
+                                .nowPlaying()
+                                .getTitle()}](${await gq
+                                .nowPlaying()
+                                .getLink()}) \n\n**up next:** \n${SongsDescription}\n\n`,
+                        )
+                        .addFields({
+                            name: 'queue length: ',
+                            value: gq.payloads.length.toString(),
+                        })
+                );
+            }),
+        );
 
         if (pages.length === 1) {
             await channel.send({

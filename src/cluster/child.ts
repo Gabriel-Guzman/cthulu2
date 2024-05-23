@@ -23,12 +23,12 @@ export async function buildChildClient(): Promise<ChildSocketManager> {
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
         'http://localhost:3000',
     );
-    await new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve) => {
         socket.on('connect', () => {
             resolve();
         });
         socket.on('connect_error', (err) => {
-            reject(err);
+            console.error('socketio connection error', err.name);
         });
     });
     return new ChildSocketManager(socket);

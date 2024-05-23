@@ -1,5 +1,3 @@
-// type QueueItem = (...args: unknown[]) => Promise<unknown>;
-
 type QueueItem<T = unknown> = {
     exec: () => Promise<T>;
     resolve?: (arg: T) => void;
@@ -12,7 +10,7 @@ enum QueueState {
 }
 
 class Lane {
-    items: QueueItem[];
+    items: QueueItem[] = [];
     state: QueueState = QueueState.EMPTY;
 
     append(item: QueueItem): void {

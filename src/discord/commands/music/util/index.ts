@@ -1,17 +1,13 @@
 // noinspection HttpUrlsUsage
 
-import {
-    AQM,
-    Payload,
-    UnsoughtYoutubePayload,
-    YoutubePayload,
-} from '@/audio/aqm';
+import { Payload, UnsoughtYoutubePayload, YoutubePayload } from '@/audio/aqm';
 import Search from '@/audio/search';
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
 import ytdl from 'ytdl-core';
 import Spotify, { confirmCredentials } from '@/discord/spotify';
 import { Context } from '@/discord';
 import { GuildChannel, GuildMember } from 'discord.js';
+import { getVoiceConnection } from '@discordjs/voice';
 
 function parseSpotifyUri(uri): ParsedSpotifyUri | null {
     try {
@@ -22,7 +18,7 @@ function parseSpotifyUri(uri): ParsedSpotifyUri | null {
 }
 
 export function areWeInChannel(guildId: string, channelId: string) {
-    const ourChannel = AQM.getChannelId(guildId);
+    const ourChannel = getVoiceConnection(guildId)?.joinConfig.channelId;
     if (!ourChannel) {
         return false;
     }
@@ -34,14 +30,17 @@ export function isUserInVoice(member: GuildMember) {
 }
 
 export function areWeInVoice(guildId): boolean {
-    const ourChannel = AQM.getChannelId(guildId);
+    const ourChannel = getVoiceConnection(guildId);
     return !!ourChannel;
 }
 
-export function isBotInChannel(channel: GuildChannel): boolean {
+export function isBotInChannel(
+    channel: GuildChannel,
+    exclude: string,
+): boolean {
     const members = channel.members;
     for (const [_, member] of members) {
-        if (member.user.bot) {
+        if (member.user.bot && member.user.id !== exclude) {
             return true;
         }
     }

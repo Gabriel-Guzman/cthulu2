@@ -178,7 +178,7 @@ async function _cachedFindOne<T extends IModels>(
     opts: Partial<T>,
 ): Promise<HydratedDocument<T>> {
     const Memory = builtClient.client;
-    const res: T = await Memory.get(key);
+    const res: T = <T>await Memory.get(key);
     if (res) {
         return model.hydrate(res);
     }

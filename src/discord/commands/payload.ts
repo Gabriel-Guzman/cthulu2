@@ -6,7 +6,8 @@ import {
 } from 'discord.js';
 import { IExtendedClient } from '@/discord/client';
 
-// Cumulative Payload. All possible fields for a minimum payload.
+// Conserves keys and changes values to strings
+// to be filled with IDs.
 export type ToIds<T> = {
     [K in keyof T]: string;
 };
@@ -26,16 +27,9 @@ export type VoiceStateBasePayload = {
     newChannel?: VoiceBasedChannel;
 };
 
-export async function interactionToBase(interaction) {
-    return {
-        guild: interaction.guild,
-        member: interaction.member as GuildMember,
-    };
-}
-
 export async function hydrateVoiceStatePayload(
     client: IExtendedClient,
-    payload: Partial<ToIds<VoiceStateBaseMinimumPayload>>,
+    payload: Partial<VoiceStateBaseMinimumPayload>,
 ): Promise<Partial<VoiceStateBasePayload>> {
     const guild = await client.guilds.fetch(payload.guild);
     let member: GuildMember;
@@ -96,10 +90,4 @@ export async function clusterToBase(
     const guild = await client.guilds.fetch(payload.guild);
     const member = await guild.members.fetch(payload.member);
     return { guild, member };
-}
-
-export function baseToCluster(
-    payload: CommandBasePayload,
-): CommandBaseMinimumPayload {
-    return { guild: payload.guild.id, member: payload.member.id };
 }

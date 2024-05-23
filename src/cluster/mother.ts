@@ -53,6 +53,8 @@ export class ClusterMotherManager {
     ): Promise<DelegationResponse> {
         console.debug('delegating');
         return this.checkout.placeOrder(checkoutLane, async () => {
+            console.time('delegation');
+            console.time('can_execute');
             const responses = await this.io
                 .timeout(config.clustering.childMessageTimeout)
                 .emitWithAck(ClusterRequest.CAN_EXECUTE, {
@@ -61,6 +63,7 @@ export class ClusterMotherManager {
                     name: action,
                 });
 
+            console.timeEnd('can_execute');
             console.debug('received ' + responses);
 
             const yesIds = responses.filter((response) => response.length);
@@ -74,6 +77,7 @@ export class ClusterMotherManager {
             const randomNode =
                 yesIds[Math.floor(Math.random() * yesIds.length)];
 
+            console.time('execute');
             console.debug('requesting execute from ', randomNode);
             const [res] = await this.io
                 .to(randomNode)
@@ -83,6 +87,9 @@ export class ClusterMotherManager {
                     namespace,
                     name: action,
                 });
+
+            console.timeEnd('execute');
+            console.timeEnd('delegating');
             console.debug('received', res);
             return {
                 ...res,

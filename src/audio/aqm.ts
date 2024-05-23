@@ -289,7 +289,7 @@ class GuildQueue {
 
         player.on(AudioPlayerStatus.Idle, this.idleListener.bind(this));
 
-        player.on('unsubscribe', (subscription) => {
+        player.on('unsubscribe', () => {
             // this is bad... i guess we'll just set not ready state to get our
             // player in order
             this.setState(QueueState.NOT_READY);
@@ -352,13 +352,6 @@ class AudioQueueManager {
 
         gq = await this.newGuildQueue(channel, textChannel);
         await gq.add(payload);
-    }
-
-    getChannelId(guildId: string): string {
-        const gq = this.queues.get(guildId);
-        if (gq) {
-            return gq.connection.joinConfig.channelId;
-        }
     }
 
     async playImmediatelySilent(channel: VoiceBasedChannel, payload: Payload) {

@@ -10,28 +10,6 @@ import { ChatInputCommandInteraction, InteractionType } from 'discord.js';
 import { HydratedDocument } from 'mongoose';
 import { Context } from '@/discord';
 
-const mockedInteraction = () => {
-    const member = {
-        voice: { channel: 'voicechannel' },
-    };
-    return {
-        isApplicationCommand: jest.fn(),
-        isCommand: jest.fn(),
-        type: InteractionType.ApplicationCommand,
-
-        options: {
-            getString: jest.fn(),
-        },
-        member,
-        reply: jest.fn(),
-        guild: {
-            channels: {
-                fetch: jest.fn(),
-            },
-        },
-    };
-};
-
 afterEach(() => {
     // restore the spy created with spyOn
     jest.restoreAllMocks();

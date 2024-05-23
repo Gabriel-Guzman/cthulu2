@@ -1,7 +1,7 @@
 import createClient, { IExtendedClient } from './client/index';
 import eventHandlers from './eventHandlers';
 import db from '@/db';
-import { Client } from 'discord.js';
+import { Client, Events, VoiceState } from 'discord.js';
 import Commands, { clusterableCommands } from '@/discord/commands';
 import {
     BaseCommand,
@@ -13,7 +13,10 @@ import config, { ClusteringRole } from '@/config';
 import { buildMotherServer, ClusterMotherManager } from '@/cluster/mother';
 import { buildChildClient, ChildSocketManager } from '@/cluster/child';
 import { ClusterRequest, ClusterRequestNamespace } from '@/cluster/types';
-import { getClusterableVoiceStateHandlers } from '@/discord/eventHandlers/voiceStateUpdate';
+import {
+    getClusterableVoiceStateHandlers,
+    globalSimpleHandlers,
+} from '@/discord/eventHandlers/voiceStateUpdate';
 
 export type Context = {
     redis: ScoRedis;
@@ -74,6 +77,15 @@ export default async function scoMom(): Promise<Client> {
 function registerChildEvents(context: ChildContext) {
     const voiceStateHandlers = getClusterableVoiceStateHandlers();
     const client = context.client;
+    context.client.on(
+        Events.VoiceStateUpdate,
+        async (oldState: VoiceState, newState: VoiceState) => {
+            for (const handler of globalSimpleHandlers) {
+                await handler({ oldState, newState });
+            }
+        },
+    );
+
     context.childClient.socket.on(
         ClusterRequest.CAN_EXECUTE,
         async (payload, cb) => {

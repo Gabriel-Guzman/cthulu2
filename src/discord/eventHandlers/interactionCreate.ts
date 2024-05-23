@@ -78,7 +78,7 @@ async function handleCommands(
 
             if (response.success) {
                 await interaction.followUp(
-                    `<@${response.responder}> responded:${response.message}`,
+                    `<@${response.responder}> responded: ${response.message}`,
                 );
             } else {
                 await interaction.followUp(

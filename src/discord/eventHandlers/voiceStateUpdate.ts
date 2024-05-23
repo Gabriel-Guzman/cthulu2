@@ -55,25 +55,23 @@ export async function lonely(evData: VoiceStateHandlerParam): Promise<void> {
     }
 }
 
-type IntroPayload = {
-    guild: string;
-    songUrl: string;
-    newChannel: string;
-};
-
 const intro: ClusterableEventHandler<
     VoiceStateHandlerParam,
-    VoiceStateUpdateCtx,
+    Context,
     VoiceStateBaseMinimumPayload
 > = {
     name: 'intro',
-    async execute(ctx: VoiceStateUpdateCtx, payload): Promise<void> {
+    async execute(ctx, payload): Promise<void> {
         const { guild: guildId, newChannel, member } = payload;
         const guild = await ctx.client.guilds.fetch(guildId);
         const voiceChannel = <VoiceChannel>(
             await guild.channels.fetch(newChannel)
         );
-        const songUrl = ctx.serverInfo.intros.get(member);
+
+        const serverInfo = await findOrCreate(ServerInfo, {
+            guildId: payload.guild,
+        });
+        const songUrl = serverInfo.intros.get(member);
 
         try {
             await AQM.playImmediatelySilent(
@@ -84,30 +82,39 @@ const intro: ClusterableEventHandler<
             console.error(error);
         }
     },
-    async validate(ctx: VoiceStateUpdateCtx, evData) {
+    async validate(ctx, evData) {
         const { oldState, newState } = evData;
-        if (!newState.channel) return false;
-        if (oldState.channel) return false;
+        if (!newState.channel?.id) return false;
+        if (oldState?.channel?.id) return false;
 
-        const introSongUrl = ctx.serverInfo.intros.get(newState.member.id);
+        const serverInfo = await findOrCreate(ServerInfo, {
+            guildId: newState.guild.id,
+        });
+        const introSongUrl = serverInfo.intros.get(newState.member.id);
         return !!introSongUrl;
     },
-    async canExecute(ctx: VoiceStateUpdateCtx, payload) {
+    async canExecute(ctx, payload) {
         const { newChannel } = await hydrateVoiceStatePayload(
             ctx.client,
             payload,
         );
-        if (!newChannel.joinable) return false;
+        if (!newChannel) {
+            console.error('invalid payload in vsu canExecute');
+            return false;
+        }
+        if (!newChannel.joinable) {
+            console.error('channel is not joinable');
+            return false;
+        }
         if (!areWeInChannel(newChannel.guildId, newChannel.id)) {
-            if (isBotInChannel(newChannel)) {
+            if (isBotInChannel(newChannel, ctx.client.user.id)) {
+                console.error('cant join channel because a bot is in it');
                 return false;
             }
-        } else {
             if (areWeInVoice(newChannel.guildId)) {
                 return false;
             }
         }
-
         return true;
     },
     async buildPayload(ctx, evData) {
@@ -124,17 +131,7 @@ type VoiceStateUpdateCtx = {
     serverInfo: HydratedDocument<IServerInfo>;
 } & Context;
 
-export async function buildVoiceStateUpdateCtx(
-    ctx: Context,
-    guildId: string,
-): Promise<VoiceStateUpdateCtx> {
-    return {
-        serverInfo: await findOrCreate(ServerInfo, {
-            guildId,
-        }),
-        ...ctx,
-    };
-}
+export const globalSimpleHandlers = [lonely];
 
 export default async function handleVoiceStateUpdate(
     context: MotherContext,
@@ -142,10 +139,11 @@ export default async function handleVoiceStateUpdate(
     newState: VoiceState,
 ): Promise<void> {
     if (oldState.member.user.bot) return;
-    const ctx: VoiceStateUpdateCtx = await buildVoiceStateUpdateCtx(
-        context,
-        oldState?.guild.id || newState?.guild.id,
-    );
+    // const ctx: VoiceStateUpdateCtx = await buildVoiceStateUpdateCtx(
+    //     context,
+    //     oldState?.guild.id || newState?.guild.id,
+    // );
+    const ctx = context;
     const simpleHandlersPromise = Promise.all([lonely({ oldState, newState })]);
 
     const clusterableHandlers = [intro];
@@ -166,7 +164,7 @@ export default async function handleVoiceStateUpdate(
                         ClusterRequestNamespace.VOICE_STATE_UPDATE,
                         h.name,
                         p,
-                        ctx.serverInfo.guildId,
+                        oldState?.guild.id || newState.guild?.id,
                     );
                 }
                 res();

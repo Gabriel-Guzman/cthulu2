@@ -24,16 +24,22 @@ export class ScoRedis implements IMemory<string, object> {
     }
 
     async write(key, value): Promise<void> {
-        await this._client.set(key, JSON.stringify(value));
+        await this._client.set(key, value);
     }
 
     async writeWithTTL(key, value, age): Promise<void> {
         await this._client.setEx(key, age, value);
     }
 
-    async get<R>(key: string): Promise<R> {
+    async get<R>(key: string): Promise<R | string> {
         const res = await this._client.get(key);
-        return JSON.parse(res) as R;
+        if (res?.length) {
+            if (res[0] === '{') {
+                return JSON.parse(res) as R;
+            } else {
+                return res;
+            }
+        }
     }
 }
 

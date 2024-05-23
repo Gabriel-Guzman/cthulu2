@@ -8,9 +8,9 @@ import { GuildMember, VoiceChannel } from 'discord.js';
 import { ClusterableCommand } from '../types';
 import {
     areWeInChannel,
+    areWeInVoice,
     buildPayload,
     isBotInChannel,
-    isUserInVoice,
 } from '@/discord/commands/music/util';
 import { buildChildNodeResponse } from '@/cluster/child';
 import {
@@ -45,18 +45,22 @@ const command: ClusterableCommand<MinimumPayload> = {
                 ),
         ),
     async canExecute(ctx, payload): Promise<boolean> {
-        const { member, guild } = await hydrateCommandPayload(
-            ctx.client,
-            payload,
-        );
-        if (!isUserInVoice(member)) return false;
+        const { member } = await hydrateCommandPayload(ctx.client, payload);
         if (!member.voice.channel.joinable) return false;
-        const me = await guild.members.fetch(ctx.client.user);
-        if (isUserInVoice(me)) {
-            return areWeInChannel(guild.id, member.voice.channelId);
-        } else {
-            return !isBotInChannel(member.voice.channel);
+        const channel = member.voice.channel;
+        if (!areWeInChannel(channel.guildId, channel.id)) {
+            if (isBotInChannel(channel, ctx.client.user.id)) {
+                console.debug('cant join channel because a bot is in it');
+                return false;
+            }
+            if (areWeInVoice(channel.guildId)) {
+                console.debug(
+                    'cant join channel because im in a different one',
+                );
+                return false;
+            }
         }
+        return true;
     },
     async execute(ctx, payload) {
         const { member, guild } = await hydrateCommandPayload(

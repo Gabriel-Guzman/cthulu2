@@ -16,12 +16,6 @@ class Search {
             ...opts,
         });
     }
-
-    async searchVideos(query) {
-        return await this.search(query, {
-            type: 'video',
-        });
-    }
 }
 
 export default {
