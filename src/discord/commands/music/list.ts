@@ -4,7 +4,12 @@ import { GuildMember } from 'discord.js';
 import { areWeInChannel, isUserInVoice } from '@/discord/commands/music/util';
 import { findOrCreate, GuildUserInfo } from '@/db';
 import pagination from '@/discord/util/pagination';
-import { AQM, IAudioPayload, UnsoughtYoutubePayload } from '@/audio/aqm';
+import {
+    AQM,
+    IAudioPayload,
+    UnsoughtYoutubePayload,
+    YoutubePayload,
+} from '@/audio/aqm';
 import { getAffirmativeDialog } from '@/discord/dialog';
 import { hydrateCommandPayload } from '@/discord/commands/payload';
 import chunk from 'lodash/chunk';
@@ -57,7 +62,7 @@ const command: ClusterableCommand = {
         // load unsought youtube data for embeds
         const list = await Promise.all(youtubePayloadPromises);
 
-        const chunks = chunk(list, 5);
+        const chunks: YoutubePayload[][] = chunk(list, 5);
 
         const pages: EmbedBuilder[] = await Promise.all(
             chunks.map(async (tracks) => {
@@ -93,21 +98,21 @@ const command: ClusterableCommand = {
             }),
         );
 
-        if (pages.length === 1) {
-            await channel.send({
-                embeds: [pages[0]],
-            });
-            return;
-        } else if (!pages.length) {
-            await channel.send('queue is empty silly silly child.');
-            return;
-        }
-        await pagination(channel, member, pages, context.client);
         const reply = getAffirmativeDialog(
             'list',
             member as GuildMember,
             userInfo,
         );
+        if (pages.length === 1) {
+            await channel.send({
+                embeds: [pages[0]],
+            });
+            return buildChildNodeResponse(true, reply);
+        } else if (!pages.length) {
+            await channel.send('queue is empty silly silly child.');
+            return buildChildNodeResponse(true, reply);
+        }
+        await pagination(channel, member, pages, context.client);
         return buildChildNodeResponse(true, reply);
     },
 };
