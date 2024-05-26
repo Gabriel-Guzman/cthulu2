@@ -355,13 +355,17 @@ class AudioQueueManager {
         await gq.add(payload);
     }
 
-    async playImmediatelySilent(channel: VoiceBasedChannel, payload: Payload) {
+    async playImmediatelySilent(
+        channel: VoiceBasedChannel,
+        textChannel: TextChannel,
+        payload: Payload,
+    ) {
         let gq = this.queues.get(channel.guild.id);
         if (gq && gq.getState() === QueueState.PLAYING) {
             return false;
         }
 
-        if (!gq) gq = await this.newGuildQueue(channel, null);
+        if (!gq) gq = await this.newGuildQueue(channel, textChannel);
 
         await gq.queue(payload, null);
         this.queues.set(channel.guild.id, gq);

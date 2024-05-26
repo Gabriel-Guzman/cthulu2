@@ -199,7 +199,9 @@ function registerEvents(ctx: MotherContext) {
     const { client } = ctx;
     Object.keys(eventHandlers).forEach((event) => {
         client.on(event, (...params) => {
+            console.time(`event handler ${event}`);
             eventHandlers[event](ctx, ...params);
+            console.timeEnd(`event handler ${event}`);
         });
     });
 }

@@ -37,7 +37,6 @@ class IPM<K, AllowedTypes> implements IMemory<K, AllowedTypes> {
 
     get(key: K): AllowedTypes {
         const data = this.storage.get(key);
-        console.log('GET', key);
         return data;
     }
 }

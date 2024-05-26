@@ -73,9 +73,20 @@ const intro: ClusterableEventHandler<
         });
         const songUrl = serverInfo.intros.get(member);
 
+        let textChannel;
+        if (
+            serverInfo.botReservedTextChannels &&
+            serverInfo.botReservedTextChannels.length
+        ) {
+            textChannel = await guild.channels.fetch(
+                serverInfo.botReservedTextChannels[0],
+            );
+        }
+
         try {
             await AQM.playImmediatelySilent(
                 voiceChannel,
+                textChannel,
                 new YoutubePayload(songUrl, '', '', ''),
             );
         } catch (error) {

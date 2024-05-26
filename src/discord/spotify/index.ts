@@ -12,8 +12,6 @@ export async function confirmCredentials(
     if (!token) {
         console.debug('refreshing credentials');
         const data = await spotifyInstance.clientCredentialsGrant();
-
-        console.debug('response from spotify', data);
         await ctx.redis.writeWithTTL(
             SPOTIFY_CACHE_KEY,
             data.body.access_token,
