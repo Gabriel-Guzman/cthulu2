@@ -199,16 +199,17 @@ class GuildQueue {
             this.current = nextPayload;
             this.player.play(await this.current.toResource());
 
-            const embed = new EmbedBuilder()
-                .setAuthor({ name: 'now playing' })
-                .setDescription(
-                    `[${await nextPayload.getTitle()}](${await nextPayload.getLink()})`,
-                );
+            if (await nextPayload.getTitle()) {
+                const embed = new EmbedBuilder()
+                    .setAuthor({ name: 'now playing' })
+                    .setDescription(
+                        `[${await nextPayload.getTitle()}](${await nextPayload.getLink()})`,
+                    );
 
-            await this.textChannel?.send({ embeds: [embed] });
+                await this.textChannel?.send({ embeds: [embed] });
+            }
             return;
         }
-
         // no songs left, kill the player
         return this.setState(QueueState.NOT_READY);
     }
