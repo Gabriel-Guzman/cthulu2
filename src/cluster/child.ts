@@ -7,7 +7,7 @@ import {
 } from '@/cluster/types';
 import { IExtendedClient } from '@/discord/client';
 
-export class ChildSocketManager {
+export class ClusterChildIO {
     socket: Socket<ServerToClientEvents, ClientToServerEvents>;
 
     constructor(socket) {
@@ -19,7 +19,7 @@ export class ChildSocketManager {
     }
 }
 
-export async function buildChildClient(): Promise<ChildSocketManager> {
+export async function buildChildIO(): Promise<ClusterChildIO> {
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
         'http://localhost:3000',
     );
@@ -31,7 +31,7 @@ export async function buildChildClient(): Promise<ChildSocketManager> {
             console.error('socketio connection error', err.name);
         });
     });
-    return new ChildSocketManager(socket);
+    return new ClusterChildIO(socket);
 }
 
 export function buildChildNodeResponse(

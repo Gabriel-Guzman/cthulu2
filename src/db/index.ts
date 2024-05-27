@@ -139,6 +139,7 @@ keyGens.set(
         `guild_user_info_${userId}_${guildId}`,
 );
 keyGens.set(ServerInfo, ({ guildId }: IServerInfo) => `server_info_${guildId}`);
+
 function replacer(key, value) {
     if (value instanceof Map) {
         return {
@@ -149,6 +150,7 @@ function replacer(key, value) {
         return value;
     }
 }
+
 function reviver(key, value) {
     if (typeof value === 'object' && value !== null) {
         if (value.dataType === 'Map') {
@@ -157,6 +159,8 @@ function reviver(key, value) {
     }
     return value;
 }
+
+// classic upsert. grabs the document from the cache if it exists
 export async function findOrCreate<TQuery extends IModels>(
     model: Model<TQuery>,
     opts: Partial<TQuery>,
@@ -171,7 +175,7 @@ export async function findOrCreate<TQuery extends IModels>(
     const key = gen(opts);
     const timerLabel = 'findOrCreate ' + key;
     console.time(timerLabel);
-    let res = await cachedFindOne(model, opts);
+    let res = await _cachedFindOne(key, model, opts);
     if (res) {
         console.timeEnd(timerLabel);
         return res;
@@ -190,18 +194,6 @@ export async function findOrCreate<TQuery extends IModels>(
     return res;
 }
 
-export async function cachedFindOne<T extends IModels>(
-    model: Model<T>,
-    opts: Partial<T>,
-): Promise<HydratedDocument<T> | void> {
-    const gen = keyGens.get(model);
-    if (!gen) {
-        throw new Error('cachedFindOne called on model with no key generator');
-    }
-    const key = gen(opts);
-    return _cachedFindOne(key, model, opts);
-}
-
 async function _cachedFindOne<T extends IModels>(
     key: string,
     model: Model<T>,
@@ -211,22 +203,20 @@ async function _cachedFindOne<T extends IModels>(
     const val = await Memory.get(key);
     if (val) {
         // found in cache
-        console.debug('found in cache', key);
         const res: T = <T>JSON.parse(val, reviver);
         return model.hydrate(res);
-    } else {
-        // not in cache, find in db
-        const dbRes = await model.findOne(opts);
-        if (dbRes) {
-            // found in db, add to cache
-            await Memory.writeWithTTL(
-                key,
-                JSON.stringify(dbRes.toObject(), replacer),
-                60 * 60,
-            );
-        }
-        return dbRes;
     }
+    // not in cache, find in db
+    const dbRes = await model.findOne(opts);
+    if (dbRes) {
+        // found in db, add to cache
+        await Memory.writeWithTTL(
+            key,
+            JSON.stringify(dbRes.toObject(), replacer),
+            60 * 60,
+        );
+    }
+    return dbRes;
 }
 
 export async function removeFromCache<T extends IModels>(

@@ -67,7 +67,7 @@ async function handleCommands(
             await interaction.reply(`let me ask my children...`);
 
             // get a response from some child
-            const response = await ctx.motherServer.delegate(
+            const response = await ctx.motherIO.delegate(
                 ctx,
                 ClusterRequestNamespace.COMMAND,
                 clusterableCommand.name,

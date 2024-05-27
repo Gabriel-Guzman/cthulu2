@@ -169,7 +169,7 @@ export default async function handleVoiceStateUpdate(
                 if (await h.canExecute(ctx, p)) {
                     await h.execute(ctx, p);
                 } else {
-                    await context.motherServer.delegate(
+                    await context.motherIO.delegate(
                         context,
                         ClusterRequestNamespace.VOICE_STATE_UPDATE,
                         h.name,

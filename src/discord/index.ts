@@ -15,9 +15,10 @@ import {
 } from '@/discord/commands/types';
 import BuildRedis, { ScoRedis } from '@/redis';
 import config, { ClusteringRole } from '@/config';
-import { buildMotherServer, ClusterMotherManager } from '@/cluster/mother';
-import { buildChildClient, ChildSocketManager } from '@/cluster/child';
+import { ClusterMotherIO, createMotherIO } from '@/cluster/mother';
+import { buildChildIO, ClusterChildIO } from '@/cluster/child';
 import {
+    APIExecutePayload,
     ClusterableCommandResponse,
     ClusterableEventHandler,
     ClusterRequest,
@@ -39,11 +40,11 @@ export type Context = {
 };
 
 export type MotherContext = {
-    motherServer: ClusterMotherManager;
+    motherIO: ClusterMotherIO;
 } & Context;
 
 export type ChildContext = {
-    childClient: ChildSocketManager;
+    childIO: ClusterChildIO;
 } & Context;
 
 export default async function scoMom(): Promise<Client> {
@@ -54,39 +55,70 @@ export default async function scoMom(): Promise<Client> {
 
     // create the logged in discord client instance
     const client = await createClient();
-    console.log('connexting to disc at ' + process.env.DISCORD_API_TOKEN);
+    console.log('connecting to disc at ' + process.env.DISCORD_API_TOKEN);
     await client.login(process.env.DISCORD_API_TOKEN);
-    console.log(
-        'logged in as ' +
-            client.application.name +
-            ',' +
-            client.user.username +
-            ',' +
-            client.application.description,
-    );
+    console.log('logged in as ' + client.user.username);
 
-    // import all our slash commands and store them in client
+    // store commands in client
     storeCommands(client, Commands, clusterableCommands);
 
     if (config.clustering.role === ClusteringRole.MOTHER) {
         const context: MotherContext = {
             client,
             redis,
-            motherServer: await buildMotherServer(),
+            motherIO: await createMotherIO(),
         };
         registerEvents(context);
     } else {
-        const childClient = await buildChildClient();
+        // can take long to connect to the mother. will retry without timeout
+        // until connection is successful.
+        const childClient = await buildChildIO();
         const context: ChildContext = {
             client,
             redis,
-            childClient,
+            childIO: childClient,
         };
         registerChildEvents(context);
         childClient.reportForDuty(context.client);
     }
 
     return client;
+}
+
+async function getHandler(
+    context: ChildContext,
+    payload: APIExecutePayload,
+): Promise<
+    ClusterableEventHandler<
+        VoiceStateHandlerParam | ChatInputCommandInteraction,
+        Context,
+        VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
+        ClusterableCommandResponse | void
+    >
+> {
+    const { name, namespace } = payload;
+    const { client } = context;
+    const voiceStateHandlers = getClusterableVoiceStateHandlers();
+    let handler: ClusterableEventHandler<
+        VoiceStateHandlerParam | ChatInputCommandInteraction,
+        Context,
+        VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
+        ClusterableCommandResponse | void
+    >;
+    if (namespace === ClusterRequestNamespace.COMMAND) {
+        handler = client.clusterableCommands.get(name);
+    } else if (namespace === ClusterRequestNamespace.VOICE_STATE_UPDATE) {
+        handler = voiceStateHandlers.get(name);
+    }
+    if (!handler) {
+        // it like can't happen.. messages are type safe
+        console.error(
+            'received can_execute request for unknown command ',
+            name,
+        );
+        return;
+    }
+    return handler;
 }
 
 function registerChildEvents(context: ChildContext) {
@@ -101,23 +133,11 @@ function registerChildEvents(context: ChildContext) {
         },
     );
 
-    context.childClient.socket.on(
+    context.childIO.socket.on(
         ClusterRequest.CAN_EXECUTE,
         async (payload, cb) => {
-            const { name, namespace } = payload;
-            let handler: ClusterableEventHandler<
-                VoiceStateHandlerParam | ChatInputCommandInteraction,
-                Context,
-                VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
-                ClusterableCommandResponse | void
-            >;
-            if (namespace === ClusterRequestNamespace.COMMAND) {
-                handler = client.clusterableCommands.get(name);
-            } else if (
-                namespace === ClusterRequestNamespace.VOICE_STATE_UPDATE
-            ) {
-                handler = voiceStateHandlers.get(name);
-            }
+            const handler = await getHandler(context, payload);
+            const { name } = payload;
             if (!handler) {
                 // it like can't happen.. messages are type safe
                 console.error(
@@ -127,7 +147,6 @@ function registerChildEvents(context: ChildContext) {
                 cb('');
                 return;
             }
-
             const can = await handler.canExecute(context, payload);
             if (can) {
                 cb(client.user.id);
@@ -136,42 +155,41 @@ function registerChildEvents(context: ChildContext) {
             }
         },
     );
-    context.childClient.socket.on(
-        ClusterRequest.EXECUTE,
-        async (payload, cb) => {
-            const voiceStateHandlers = getClusterableVoiceStateHandlers();
-            const { name, namespace } = payload;
-            let handler: ClusterableEventHandler<
-                VoiceStateHandlerParam | ChatInputCommandInteraction,
-                Context,
-                VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
-                ClusterableCommandResponse | void
-            >;
-            if (namespace === ClusterRequestNamespace.COMMAND) {
-                handler = client.clusterableCommands.get(name);
-            } else if (
-                namespace === ClusterRequestNamespace.VOICE_STATE_UPDATE
-            ) {
-                handler = voiceStateHandlers.get(payload.name);
-            }
-            if (!handler) {
-                // it like can't happen.. messages are type safe
-                console.error(
-                    'received execute request for unknown command ',
-                    name,
-                );
-                cb({
-                    success: false,
-                    message: 'command not found',
-                });
-                return;
-            }
+    context.childIO.socket.on(ClusterRequest.EXECUTE, async (payload, cb) => {
+        // const voiceStateHandlers = getClusterableVoiceStateHandlers();
+        const { name, namespace } = payload;
+        // let handler: ClusterableEventHandler<
+        //     VoiceStateHandlerParam | ChatInputCommandInteraction,
+        //     Context,
+        //     VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
+        //     ClusterableCommandResponse | void
+        // >;
+        // if (namespace === ClusterRequestNamespace.COMMAND) {
+        //     handler = client.clusterableCommands.get(name);
+        // } else if (namespace === ClusterRequestNamespace.VOICE_STATE_UPDATE) {
+        //     handler = voiceStateHandlers.get(payload.name);
+        // }
+        const handler = await getHandler(context, payload);
+        if (!handler) {
+            console.error(
+                'received execute request for unknown command ',
+                name,
+            );
+            cb({
+                success: false,
+                message: 'command not found',
+            });
+            return;
+        }
 
-            // const ep = await command.buildExecutePayload(client, payload);
-            const resp = await handler.execute(context, payload);
-            cb(resp || { success: true, message: '' });
-        },
-    );
+        const timerLabel = `child executing ${namespace}.${name} with ${JSON.stringify(
+            payload,
+        )}`;
+        console.time(timerLabel);
+        const resp = await handler.execute(context, payload);
+        console.timeEnd(timerLabel);
+        cb(resp || { success: true, message: '' });
+    });
 }
 
 function storeCommands(

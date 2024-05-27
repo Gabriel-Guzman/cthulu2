@@ -20,7 +20,7 @@ type DelegationResponse = {
     responder?: string;
 } & ClusterableCommandResponse;
 
-export class ClusterMotherManager {
+export class ClusterMotherIO {
     io: Server<
         ClientToServerEvents,
         ServerToClientEvents,
@@ -101,7 +101,7 @@ export class ClusterMotherManager {
     }
 }
 
-export function buildMotherServer(): ClusterMotherManager {
+export function createMotherIO(): ClusterMotherIO {
     const httpServer = createServer();
     const io = new Server<
         ClientToServerEvents,
@@ -111,5 +111,5 @@ export function buildMotherServer(): ClusterMotherManager {
     >(httpServer);
 
     httpServer.listen(3000);
-    return new ClusterMotherManager(io);
+    return new ClusterMotherIO(io);
 }
