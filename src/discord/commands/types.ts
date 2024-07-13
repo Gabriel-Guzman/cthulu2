@@ -2,8 +2,8 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { ChatInputCommandInteraction } from 'discord.js';
 import { CommandBaseMinimumPayload } from '@/discord/commands/payload';
 import {
-    ClusterableCommandResponse,
     ClusterableEventHandler,
+    ClusterableEventHandlerResponse,
 } from '@/cluster/types';
 import { Context } from '@/discord';
 import { BaseEventHandler } from '@/discord/eventHandlers/types';
@@ -29,6 +29,6 @@ export type ClusterableCommand<
     ChatInputCommandInteraction,
     Context,
     Payload,
-    ClusterableCommandResponse
+    ClusterableEventHandlerResponse
 > &
     BaseCommand;

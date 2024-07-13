@@ -19,14 +19,14 @@ import { ClusterMotherIO, createMotherIO } from '@/cluster/mother';
 import { buildChildIO, ClusterChildIO } from '@/cluster/child';
 import {
     APIExecutePayload,
-    ClusterableCommandResponse,
     ClusterableEventHandler,
+    ClusterableEventHandlerResponse,
     ClusterRequest,
     ClusterRequestNamespace,
 } from '@/cluster/types';
 import {
-    getClusterableVoiceStateHandlers,
-    globalSimpleHandlers,
+    ClusterableVoiceStateHandlers,
+    GlobalVoiceStateHandlers,
     VoiceStateHandlerParam,
 } from '@/discord/eventHandlers/voiceStateUpdate';
 import {
@@ -66,7 +66,7 @@ export default async function scoMom(): Promise<Client> {
         const context: MotherContext = {
             client,
             redis,
-            motherIO: await createMotherIO(),
+            motherIO: createMotherIO(),
         };
         registerEvents(context);
     } else {
@@ -93,17 +93,17 @@ async function getHandler(
         VoiceStateHandlerParam | ChatInputCommandInteraction,
         Context,
         VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
-        ClusterableCommandResponse | void
+        ClusterableEventHandlerResponse | void
     >
 > {
     const { name, namespace } = payload;
     const { client } = context;
-    const voiceStateHandlers = getClusterableVoiceStateHandlers();
+    const voiceStateHandlers = ClusterableVoiceStateHandlers();
     let handler: ClusterableEventHandler<
         VoiceStateHandlerParam | ChatInputCommandInteraction,
         Context,
         VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
-        ClusterableCommandResponse | void
+        ClusterableEventHandlerResponse | void
     >;
     if (namespace === ClusterRequestNamespace.COMMAND) {
         handler = client.clusterableCommands.get(name);
@@ -122,12 +122,11 @@ async function getHandler(
 }
 
 function registerChildEvents(context: ChildContext) {
-    const voiceStateHandlers = getClusterableVoiceStateHandlers();
     const client = context.client;
-    context.client.on(
+    client.on(
         Events.VoiceStateUpdate,
         async (oldState: VoiceState, newState: VoiceState) => {
-            for (const handler of globalSimpleHandlers) {
+            for (const handler of GlobalVoiceStateHandlers) {
                 await handler({ oldState, newState });
             }
         },
@@ -156,19 +155,7 @@ function registerChildEvents(context: ChildContext) {
         },
     );
     context.childIO.socket.on(ClusterRequest.EXECUTE, async (payload, cb) => {
-        // const voiceStateHandlers = getClusterableVoiceStateHandlers();
         const { name, namespace } = payload;
-        // let handler: ClusterableEventHandler<
-        //     VoiceStateHandlerParam | ChatInputCommandInteraction,
-        //     Context,
-        //     VoiceStateBaseMinimumPayload | CommandBaseMinimumPayload,
-        //     ClusterableCommandResponse | void
-        // >;
-        // if (namespace === ClusterRequestNamespace.COMMAND) {
-        //     handler = client.clusterableCommands.get(name);
-        // } else if (namespace === ClusterRequestNamespace.VOICE_STATE_UPDATE) {
-        //     handler = voiceStateHandlers.get(payload.name);
-        // }
         const handler = await getHandler(context, payload);
         if (!handler) {
             console.error(

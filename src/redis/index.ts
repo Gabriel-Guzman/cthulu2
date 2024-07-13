@@ -1,17 +1,17 @@
 import { createClient } from 'redis';
 import { IMemory } from '@/memory/types';
+import { RedisCommandArgument } from '@redis/client/dist/lib/commands';
 
 async function buildRedisClient(uri: string) {
-    const client = await createClient({
+    return await createClient({
         url: uri,
     }).connect();
-    return client;
 }
 
 type DePromise<T> = T extends Promise<infer D> ? D : never;
 type TRedisClient = DePromise<ReturnType<typeof buildRedisClient>>;
 
-export class ScoRedis implements IMemory<string, object> {
+export class ScoRedis implements IMemory<RedisCommandArgument, object> {
     private _client: TRedisClient;
 
     async init() {
@@ -31,9 +31,8 @@ export class ScoRedis implements IMemory<string, object> {
         await this._client.setEx(key, age, value);
     }
 
-    async get(key: string): Promise<string> {
-        const res = await this._client.get(key);
-        return res;
+    async get(key): Promise<string> {
+        return await this._client.get(key);
     }
 }
 

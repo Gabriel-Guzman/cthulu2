@@ -9,7 +9,7 @@ import { Context } from '@/discord';
 import { GuildChannel, GuildMember } from 'discord.js';
 import { getVoiceConnection } from '@discordjs/voice';
 
-function parseSpotifyUri(uri): ParsedSpotifyUri | null {
+function parseSpotifyUri(uri: string): ParsedSpotifyUri | null {
     try {
         return parse(uri);
     } catch (e) {
@@ -29,7 +29,7 @@ export function isUserInVoice(member: GuildMember) {
     return !!member.voice?.channel?.id;
 }
 
-export function areWeInVoice(guildId): boolean {
+export function areWeInVoice(guildId: string): boolean {
     const ourChannel = getVoiceConnection(guildId);
     return !!ourChannel;
 }
@@ -39,7 +39,7 @@ export function isBotInChannel(
     exclude: string,
 ): boolean {
     const members = channel.members;
-    for (const [_, member] of members) {
+    for (const member of members.values()) {
         if (member.user.bot && member.user.id !== exclude) {
             return true;
         }
@@ -57,8 +57,6 @@ export async function buildPayload(
 
     const parsed = parseSpotifyUri(firstWord);
 
-    let ytPayload;
-
     const spotify = Spotify();
 
     if (parsed) {
@@ -66,7 +64,7 @@ export async function buildPayload(
 
         switch (parsed.type) {
             case 'track':
-                const castedTrack = parsed as Track;
+                const castedTrack = <Track>parsed;
                 const resp = await spotify.getTrack(castedTrack.id);
 
                 const track = resp.body;
@@ -87,7 +85,7 @@ export async function buildPayload(
                     ),
                 ];
             case 'playlist':
-                const castedPlaylist = parsed as Playlist;
+                const castedPlaylist = <Playlist>parsed;
                 const playlistResp: {
                     body: {
                         tracks: {
@@ -112,7 +110,7 @@ export async function buildPayload(
                     (q) => new UnsoughtYoutubePayload(q, requestedBy),
                 );
             case 'album':
-                const castedAlbum = parsed as Album;
+                const castedAlbum = <Album>parsed;
                 const albumResp: {
                     body: {
                         items: Array<{
@@ -137,35 +135,30 @@ export async function buildPayload(
         }
     }
 
-    if (!ytPayload) {
-        if (
-            !firstWord.startsWith('https://') &&
-            !firstWord.startsWith('http://')
-        ) {
-            const result = await Search.searchVideos(fullArgs);
-            if (!result || result.length === 0) {
-                throw new Error("i couldn't find that on youtube :(");
-            }
-            return [
-                new YoutubePayload(
-                    result[0].link,
-                    result[0].title,
-                    requestedBy,
-                    result[0].thumbnails.default,
-                ),
-            ];
-        } else {
-            const songInfo = await ytdl.getInfo(
-                firstWord.replace('https://', 'http://'),
-            );
-            return [
-                new YoutubePayload(
-                    songInfo.videoDetails.video_url,
-                    songInfo.videoDetails.title,
-                    requestedBy,
-                    songInfo.thumbnail_url,
-                ),
-            ];
+    if (!firstWord.startsWith('https://') && !firstWord.startsWith('http://')) {
+        const result = await Search.searchVideos(fullArgs);
+        if (!result || result.length === 0) {
+            throw new Error("i couldn't find that on youtube :(");
         }
+        return [
+            new YoutubePayload(
+                result[0].link,
+                result[0].title,
+                requestedBy,
+                result[0].thumbnails.default,
+            ),
+        ];
+    } else {
+        const songInfo = await ytdl.getInfo(
+            firstWord.replace('https://', 'http://'),
+        );
+        return [
+            new YoutubePayload(
+                songInfo.videoDetails.video_url,
+                songInfo.videoDetails.title,
+                requestedBy,
+                songInfo.thumbnail_url,
+            ),
+        ];
     }
 }

@@ -1,4 +1,4 @@
-import { Collection, VoiceChannel, VoiceState } from 'discord.js';
+import { Collection, TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import { getVoiceConnection } from '@discordjs/voice';
 import { AQM, YoutubePayload } from '@/audio/aqm';
 import { HydratedDocument } from 'mongoose';
@@ -73,13 +73,15 @@ const intro: ClusterableEventHandler<
         });
         const songUrl = serverInfo.intros.get(member);
 
-        let textChannel;
+        let textChannel: TextChannel;
         if (
             serverInfo.botReservedTextChannels &&
             serverInfo.botReservedTextChannels.length
         ) {
-            textChannel = await guild.channels.fetch(
-                serverInfo.botReservedTextChannels[0],
+            textChannel = <TextChannel>(
+                await guild.channels.fetch(
+                    serverInfo.botReservedTextChannels[0],
+                )
             );
         }
 
@@ -143,7 +145,8 @@ type VoiceStateUpdateCtx = {
     serverInfo: HydratedDocument<IServerInfo>;
 } & Context;
 
-export const globalSimpleHandlers = [lonely];
+// these are run by every bot regardless of role.
+export const GlobalVoiceStateHandlers = [lonely];
 
 export default async function handleVoiceStateUpdate(
     context: MotherContext,
@@ -153,7 +156,7 @@ export default async function handleVoiceStateUpdate(
     if (oldState.member.user.bot) return;
     const ctx = context;
     const simpleHandlersPromise = Promise.all(
-        globalSimpleHandlers.map((h) => h({ oldState, newState })),
+        GlobalVoiceStateHandlers.map((h) => h({ oldState, newState })),
     );
 
     const clusterableHandlers = [intro];
@@ -183,7 +186,7 @@ export default async function handleVoiceStateUpdate(
     await Promise.all([simpleHandlersPromise, clusterableHandlersPromise]);
 }
 
-export function getClusterableVoiceStateHandlers() {
+export function ClusterableVoiceStateHandlers() {
     const handlers = new Collection<
         string,
         ClusterableEventHandler<

@@ -91,7 +91,7 @@ async function handleCommands(
     } catch (e) {
         console.error(e);
         await interaction.channel.send({
-            content: `An error has occurred. <@140312872726167552>\n\n**\`${e.message}\`**`,
+            content: `An error has occurred. \n\n**\`${e.message}\`**`,
         });
         return;
     }

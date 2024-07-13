@@ -7,7 +7,7 @@ import { buildChildNodeResponse } from '@/cluster/child';
 import { getAffirmativeDialog } from '@/discord/dialog';
 import { areWeInChannel, isUserInVoice } from '@/discord/commands/music/util';
 import { hydrateCommandPayload } from '@/discord/commands/payload';
-import { ClusterableCommandResponse } from '@/cluster/types';
+import { ClusterableEventHandlerResponse } from '@/cluster/types';
 
 const command: ClusterableCommand = {
     async buildPayload(ctx, evData) {
@@ -23,7 +23,7 @@ const command: ClusterableCommand = {
             areWeInChannel(param.guild, member.voice.channel.id)
         );
     },
-    async execute(ctx, param): Promise<ClusterableCommandResponse> {
+    async execute(ctx, param): Promise<ClusterableEventHandlerResponse> {
         AQM.pause(param.guild);
         const userInfo = await findOrCreate(GuildUserInfo, {
             userId: param.member,

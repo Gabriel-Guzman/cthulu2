@@ -131,7 +131,7 @@ export type IModels = IServerInfo | IGuildUserInfo;
 
 type CacheKeyCreator = (document: Partial<IModels>) => string;
 
-const keyGens = new Map<Model<any>, CacheKeyCreator>();
+const keyGens = new Map<any, CacheKeyCreator>();
 
 keyGens.set(
     GuildUserInfo,
@@ -161,6 +161,8 @@ function reviver(key, value) {
 }
 
 // classic upsert. grabs the document from the cache if it exists
+// model: a Mongoose model with an entry in keyGens
+// opts: the options to pass to model.findOne or model.create if it doesn't exist
 export async function findOrCreate<TQuery extends IModels>(
     model: Model<TQuery>,
     opts: Partial<TQuery>,
@@ -173,27 +175,25 @@ export async function findOrCreate<TQuery extends IModels>(
         );
     }
     const key = gen(opts);
-    const timerLabel = 'findOrCreate ' + key;
-    console.time(timerLabel);
+
+    // grab doc if it exists in cache or db
     let res = await _cachedFindOne(key, model, opts);
     if (res) {
-        console.timeEnd(timerLabel);
         return res;
     }
 
     // doesn't exist yet. create it and add to cache
     res = await model.create(opts);
-
     await Memory.writeWithTTL(
         key,
         JSON.stringify(res.toObject(), replacer),
         60 * 60,
     );
 
-    console.timeEnd(timerLabel);
     return res;
 }
 
+// load a document from cache using key or database using opts
 async function _cachedFindOne<T extends IModels>(
     key: string,
     model: Model<T>,

@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import { createServer } from 'http';
 import {
     ClientToServerEvents,
-    ClusterableCommandResponse,
+    ClusterableEventHandlerResponse,
     ClusterRequest,
     InterServerEvents,
     ServerToClientEvents,
@@ -18,8 +18,9 @@ import Checkout from '@/helpers/checkout';
 
 type DelegationResponse = {
     responder?: string;
-} & ClusterableCommandResponse;
+} & ClusterableEventHandlerResponse;
 
+// contains all the logic for delegating events to connected child instances.
 export class ClusterMotherIO {
     io: Server<
         ClientToServerEvents,
@@ -43,7 +44,12 @@ export class ClusterMotherIO {
         });
     }
 
-    // sends command to a random child
+    // delegate an event to a random child.
+    // namespace: an identifier for the type of event.
+    // action: the name of the handler to call.
+    // payload: the payload to pass to the handler. must be able to be JSON serialized.
+    // checkoutLane: the key of the lane used for this delegation. delegations in
+    //  the same lane will run as FIFO, but different lanes run in parallel.
     async delegate(
         ctx: Context,
         namespace: string,
@@ -51,9 +57,10 @@ export class ClusterMotherIO {
         payload: CommandBaseMinimumPayload | VoiceStateBaseMinimumPayload,
         checkoutLane = 'global',
     ): Promise<DelegationResponse> {
+        // queue up the delegation request into the specified lane.
         return this.checkout.placeOrder(checkoutLane, async () => {
-            const delegationTimerLabel = `delegation ${namespace}.${action}`;
-            const canExecuteTimerLabel = `can_execute ${namespace}.${action}`;
+            const delegationTimerLabel = `[ClusterMotherIO.delegate] ${namespace}.${action}`;
+            const canExecuteTimerLabel = `[ClusterMotherIO.delegate] can_execute ${namespace}.${action}`;
             console.time(delegationTimerLabel);
             console.time(canExecuteTimerLabel);
             const responses = await this.io
@@ -78,7 +85,7 @@ export class ClusterMotherIO {
             const randomNode =
                 yesIds[Math.floor(Math.random() * yesIds.length)];
 
-            const executeTimerLabel = `execute ${namespace}.${action}`;
+            const executeTimerLabel = `[ClusterMotherIO.delegate] execute ${namespace}.${action}`;
             console.time(executeTimerLabel);
             console.debug('requesting execute from ', randomNode);
             const [res] = await this.io

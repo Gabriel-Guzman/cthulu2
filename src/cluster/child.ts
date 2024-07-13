@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import {
     ClientToServerEvents,
-    ClusterableCommandResponse,
+    ClusterableEventHandlerResponse,
     ClusterRequest,
     ServerToClientEvents,
 } from '@/cluster/types';
@@ -37,7 +37,7 @@ export async function buildChildIO(): Promise<ClusterChildIO> {
 export function buildChildNodeResponse(
     success: boolean,
     message: string,
-): ClusterableCommandResponse {
+): ClusterableEventHandlerResponse {
     return {
         success,
         message,

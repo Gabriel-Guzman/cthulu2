@@ -2,8 +2,6 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { AQM } from '@/audio/aqm';
 import { getAffirmativeDialog } from '../../dialog';
 import { findOrCreate, GuildUserInfo, ServerInfo } from '@/db';
-// @ts-ignore
-import ytdl from 'ytdl-core';
 import { GuildMember, VoiceChannel } from 'discord.js';
 import { ClusterableCommand } from '../types';
 import {
@@ -68,18 +66,18 @@ const command: ClusterableCommand<MinimumPayload> = {
             payload,
         );
         try {
-            const audioPayload = await buildPayload(
+            const audioPayloads = await buildPayload(
                 ctx,
                 payload.query,
                 payload.member,
             );
 
-            let textChannel;
             const serverInfo = await findOrCreate(ServerInfo, {
                 guildId: payload.guild,
             });
 
-            // if there's a channel for bot to spam in this guild
+            // look for which channel we're allowed to spam
+            let textChannel;
             if (
                 serverInfo.botReservedTextChannels &&
                 serverInfo.botReservedTextChannels.length
@@ -89,7 +87,7 @@ const command: ClusterableCommand<MinimumPayload> = {
                 );
             }
 
-            for (const payload of audioPayload) {
+            for (const payload of audioPayloads) {
                 await AQM.queue(
                     member.voice.channel as VoiceChannel,
                     textChannel,
