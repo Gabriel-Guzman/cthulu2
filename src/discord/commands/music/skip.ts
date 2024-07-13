@@ -5,10 +5,7 @@ import { findOrCreate, GuildUserInfo } from '@/db';
 import { ClusterableCommand } from '../types';
 import { GuildMember } from 'discord.js';
 import { areWeInChannel } from '@/discord/commands/music/util';
-import {
-    clusterToBase,
-    hydrateCommandPayload,
-} from '@/discord/commands/payload';
+import { hydrateCommandPayload } from '@/discord/commands/payload';
 
 const command: ClusterableCommand = {
     name: 'skip',
@@ -38,8 +35,8 @@ const command: ClusterableCommand = {
 
         return true;
     },
-    async execute(interaction, minPayload) {
-        const payload = await clusterToBase(interaction.client, minPayload);
+    async execute(ctx, minPayload) {
+        const payload = await hydrateCommandPayload(ctx.client, minPayload);
         AQM.skip(payload.guild.id);
         const userInfo = await findOrCreate(GuildUserInfo, {
             userId: (payload.member as GuildMember).id,

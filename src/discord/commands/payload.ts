@@ -82,12 +82,3 @@ export async function hydrateCommandPayload(
         channel,
     };
 }
-
-export async function clusterToBase(
-    client: IExtendedClient,
-    payload: CommandBaseMinimumPayload,
-): Promise<CommandBasePayload> {
-    const guild = await client.guilds.fetch(payload.guild);
-    const member = await guild.members.fetch(payload.member);
-    return { guild, member };
-}

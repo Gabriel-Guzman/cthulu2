@@ -56,7 +56,7 @@ export class YoutubePayload implements AudioPayload {
     }
 
     async toResource(): Promise<AudioResource> {
-        const stream = await ytdl(this.link, {
+        const stream = ytdl(this.link, {
             filter: 'audioonly',
             quality: 'highest',
             highWaterMark: 3.2e7,
@@ -83,7 +83,7 @@ export class UnsoughtYoutubePayload implements AudioPayload {
 
     private _payload?: YoutubePayload;
 
-    constructor(query, requestedBy) {
+    constructor(query: string, requestedBy: string) {
         this.query = query;
         this.requestedBy = requestedBy;
     }
@@ -193,6 +193,13 @@ class GuildQueue {
         return this.current;
     }
 
+    /**
+     * Handles the transition to the next song in the queue.
+     * If there are songs left in the queue, it plays the next song and sends a "now playing" message to the text channel.
+     * If there are no songs left in the queue, it stops the player and sets the queue state to NOT_READY.
+     *
+     * @returns {Promise<void>} - A promise that resolves when the next song is played or the queue is stopped.
+     */
     private async next(): Promise<void> {
         const nextPayload = this.shiftQueue();
         if (nextPayload) {
@@ -278,7 +285,9 @@ class GuildQueue {
 
         player.on('error', (error) => {
             this.textChannel?.send(
-                `error playing ${this.current} >:(\n${detailed(error)}`,
+                `error playing ${JSON.stringify(this.current)} >:(\n${detailed(
+                    error,
+                )}`,
             );
             console.error(error);
         });
@@ -293,7 +302,9 @@ class GuildQueue {
         player.on('unsubscribe', () => {
             // this is bad... i guess we'll just set not ready state to get our
             // player in order
-            this.setState(QueueState.NOT_READY);
+            this.setState(QueueState.NOT_READY).catch((error) =>
+                console.error(error),
+            );
         });
 
         return player;
@@ -355,6 +366,8 @@ class AudioQueueManager {
         await gq.add(payload);
     }
 
+    // plays a payload immediately if the queue is not playing and doesn't
+    //  post in a text channel
     async playImmediatelySilent(
         channel: VoiceBasedChannel,
         textChannel: TextChannel,
@@ -372,6 +385,7 @@ class AudioQueueManager {
         return true;
     }
 
+    // creates or gets a VoiceConnection to a guild
     async connectToVoice(
         channel: VoiceBasedChannel,
         guildId: string,

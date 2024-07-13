@@ -21,7 +21,7 @@ export type APIExecutePayload = {
     name: string;
 } & (CommandBaseMinimumPayload | VoiceStateBaseMinimumPayload);
 
-export type ClusterableCommandResponse = {
+export type ClusterableEventHandlerResponse = {
     success: boolean;
     message: string;
 };
@@ -33,7 +33,7 @@ export interface ServerToClientEvents {
     ) => void | Promise<void>;
     [ClusterRequest.EXECUTE]: (
         payload: APIExecutePayload,
-        cb: (response: ClusterableCommandResponse) => void,
+        cb: (response: ClusterableEventHandlerResponse) => void,
     ) => void | Promise<void>;
 }
 
@@ -60,6 +60,9 @@ export interface ClusterableEventHandler<
     // return true if the event fulfills the conditions for this handler to run.
     validate(ctx: CTX, evData: EventData): Promise<boolean>;
 
+    // build a Payload that can be sent through socket.io to the mother properly. this payload
+    // will be used by execute() to run the event handler either by the mother
+    // or a child if the mother is busy.
     buildPayload(ctx: CTX, evData: EventData): Promise<Payload>;
 
     // return true if this bot instance fulfills the conditions to run the event

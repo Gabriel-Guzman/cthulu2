@@ -1,15 +1,15 @@
-import search from 'youtube-search';
+import search, { YouTubeSearchOptions } from 'youtube-search';
 import util from 'util';
 
 class Search {
     key: string;
     maxResults: number;
-    constructor(key, maxResults) {
+    constructor(key: string, maxResults: number) {
         this.key = key;
         this.maxResults = maxResults;
     }
 
-    search(query, opts) {
+    search(query: string, opts: YouTubeSearchOptions) {
         return util.promisify(search)(query, {
             key: this.key,
             maxResults: this.maxResults,
@@ -19,12 +19,12 @@ class Search {
 }
 
 export default {
-    async search(query, opts) {
+    async search(query: string, opts: YouTubeSearchOptions) {
         const s = new Search(process.env.YOUTUBE_API_KEY, 10);
         return s.search(query, opts);
     },
 
-    async searchVideos(query) {
+    async searchVideos(query: string) {
         return await this.search(query, {
             type: 'video',
         });
