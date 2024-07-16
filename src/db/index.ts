@@ -131,7 +131,8 @@ export type IModels = IServerInfo | IGuildUserInfo;
 
 type CacheKeyCreator = (document: Partial<IModels>) => string;
 
-const keyGens = new Map<any, CacheKeyCreator>();
+type CacheableModels = typeof GuildUserInfo | typeof ServerInfo;
+const keyGens = new Map<CacheableModels, CacheKeyCreator>();
 
 keyGens.set(
     GuildUserInfo,
