@@ -3,7 +3,7 @@
 import { Payload, UnsoughtYoutubePayload, YoutubePayload } from '@/audio/aqm';
 import Search from '@/audio/search';
 import { Album, parse, ParsedSpotifyUri, Playlist, Track } from 'spotify-uri';
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import Spotify, { confirmCredentials } from '@/discord/spotify';
 import { Context } from '@/discord';
 import { GuildChannel, GuildMember } from 'discord.js';
