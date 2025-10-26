@@ -1,5 +1,4 @@
-import ytdl from '@distube/ytdl-core';
-
+import { Innertube } from 'youtubei.js';
 import {
     AudioPlayer,
     AudioPlayerError,
@@ -22,6 +21,17 @@ import {
     VoiceBasedChannel,
     VoiceChannel,
 } from 'discord.js';
+import { Readable } from 'node:stream';
+import { Error } from 'mongoose';
+
+let innertube: Innertube | null = null;
+async function ensureInnertube(): Promise<Innertube> {
+    if (innertube === null) {
+        innertube = await Innertube.create();
+    }
+
+    return innertube;
+}
 
 interface AudioPayload {
     readonly requestedBy: string;
@@ -33,12 +43,22 @@ interface AudioPayload {
     getLink(): string | Promise<string>;
 
     getThumbnail(): string | Promise<string>;
+
+    getId(): string | Promise<string>;
 }
 
 export type IAudioPayload = AudioPayload;
 
+async function downloadById(id: string) {
+    const it = await ensureInnertube();
+    // @ts-ignore
+    const stream: Readable = Readable.fromWeb(await it.download(this.id));
+    return createAudioResource(stream);
+}
+
 export class YoutubePayload implements AudioPayload {
     readonly link: string;
+    readonly id: string;
     readonly title: string;
     readonly thumbnail: string;
     requestedBy: string;
@@ -48,20 +68,17 @@ export class YoutubePayload implements AudioPayload {
         title: string,
         requestedBy: string,
         thumbnail: string,
+        id: string,
     ) {
         this.link = link;
         this.title = title;
         this.requestedBy = requestedBy;
         this.thumbnail = thumbnail;
+        this.id = id;
     }
 
     async toResource(): Promise<AudioResource> {
-        const stream = ytdl(this.link, {
-            filter: 'audioonly',
-            quality: 'highest',
-            highWaterMark: 3.2e7,
-        });
-        return createAudioResource(stream);
+        return downloadById(this.id);
     }
 
     getTitle(): string {
@@ -74,6 +91,10 @@ export class YoutubePayload implements AudioPayload {
 
     getThumbnail(): string {
         return this.thumbnail;
+    }
+
+    getId(): string | Promise<string> {
+        return this.id;
     }
 }
 
@@ -127,7 +148,13 @@ export class UnsoughtYoutubePayload implements AudioPayload {
             item.title,
             this.requestedBy,
             item.thumbnails.default,
+            item.id,
         );
+    }
+
+    async getId(): Promise<string> {
+        await this.load();
+        return this._payload.id;
     }
 }
 
@@ -232,11 +259,11 @@ class GuildQueue {
                 break;
             case QueueState.PLAYING:
                 if (newState === QueueState.NOT_READY) {
-                    this.player.off(
-                        AudioPlayerStatus.AutoPaused,
-                        this.autoPausedListener,
-                    );
-                    this.player.off(AudioPlayerStatus.Idle, this.idleListener);
+                    // this.player.off(
+                    //     AudioPlayerStatus.AutoPaused,
+                    //     this.autoPausedListener,
+                    // );
+                    // this.player.off(AudioPlayerStatus.Idle, this.idleListener);
                     this.payloads = [];
                     this.player.stop();
                     this.subscription.unsubscribe();

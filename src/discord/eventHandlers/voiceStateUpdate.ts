@@ -1,6 +1,7 @@
 import { Collection, TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import { getVoiceConnection } from '@discordjs/voice';
 import { AQM, YoutubePayload } from '@/audio/aqm';
+import Search from '@/audio/search';
 import { HydratedDocument } from 'mongoose';
 import { findOrCreate, IServerInfo, ServerInfo } from '@/db';
 import { Context, MotherContext } from '@/discord';
@@ -85,11 +86,12 @@ const intro: ClusterableEventHandler<
             );
         }
 
+        const songDetails = await Search.searchVideos(songUrl);
         try {
             await AQM.playImmediatelySilent(
                 voiceChannel,
                 textChannel,
-                new YoutubePayload(songUrl, '', '', ''),
+                new YoutubePayload(songUrl, '', '', '', songDetails[0].id),
             );
         } catch (error) {
             console.error(error);

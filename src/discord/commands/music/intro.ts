@@ -8,7 +8,7 @@ import { ScoMomCommand } from '../types';
 import { GuildMember } from 'discord.js';
 
 function isValidHttpUrl(string): boolean {
-    let url;
+    let url: URL;
     try {
         url = new URL(string);
     } catch (_) {

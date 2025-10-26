@@ -74,7 +74,7 @@ describe('queue.run', () => {
         const buildPayloadSpy = jest
             .spyOn(utils, 'buildPayload')
             .mockImplementation(async () => [
-                new aqm.YoutubePayload('url', 'title', member.id, ''),
+                new aqm.YoutubePayload('url', 'title', member.id, '', ''),
             ]);
 
         const findOneSpy = jest

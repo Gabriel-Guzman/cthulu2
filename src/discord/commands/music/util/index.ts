@@ -82,6 +82,7 @@ export async function buildPayload(
                         result[0].title,
                         requestedBy,
                         result[0].thumbnails.default,
+                        result[0].id,
                     ),
                 ];
             case 'playlist':
@@ -146,6 +147,7 @@ export async function buildPayload(
                 result[0].title,
                 requestedBy,
                 result[0].thumbnails.default,
+                result[0].id,
             ),
         ];
     } else {
@@ -158,6 +160,7 @@ export async function buildPayload(
                 songInfo.videoDetails.title,
                 requestedBy,
                 songInfo.thumbnail_url,
+                songInfo.vid,
             ),
         ];
     }
