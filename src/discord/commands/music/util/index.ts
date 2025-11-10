@@ -160,7 +160,7 @@ export async function buildPayload(
                 songInfo.videoDetails.title,
                 requestedBy,
                 songInfo.thumbnail_url,
-                songInfo.vid,
+                songInfo.videoDetails.videoId,
             ),
         ];
     }

@@ -1,4 +1,5 @@
-import { Innertube } from 'youtubei.js';
+import { PassThrough } from 'stream';
+import { YtDlp } from 'ytdlp-nodejs';
 import {
     AudioPlayer,
     AudioPlayerError,
@@ -15,23 +16,10 @@ import {
 } from '@discordjs/voice';
 
 import Search from '@/audio/search';
-import {
-    EmbedBuilder,
-    TextChannel,
-    VoiceBasedChannel,
-    VoiceChannel,
-} from 'discord.js';
-import { Readable } from 'node:stream';
+import { EmbedBuilder, TextChannel, VoiceBasedChannel, VoiceChannel } from 'discord.js';
 import { Error } from 'mongoose';
 
-let innertube: Innertube | null = null;
-async function ensureInnertube(): Promise<Innertube> {
-    if (innertube === null) {
-        innertube = await Innertube.create();
-    }
-
-    return innertube;
-}
+const ytdlp = new YtDlp();
 
 interface AudioPayload {
     readonly requestedBy: string;
@@ -49,11 +37,17 @@ interface AudioPayload {
 
 export type IAudioPayload = AudioPayload;
 
-async function downloadById(id: string) {
-    const it = await ensureInnertube();
-    // @ts-ignore
-    const stream: Readable = Readable.fromWeb(await it.download(this.id));
-    return createAudioResource(stream);
+async function downloadByUrl(url: string) {
+    const out = ytdlp.stream(url, {
+        format: {
+            filter: 'audioonly',
+            type: 'mp3',
+        },
+    });
+    const pass = new PassThrough();
+    out.pipe(pass);
+
+    return createAudioResource(pass);
 }
 
 export class YoutubePayload implements AudioPayload {
@@ -78,7 +72,7 @@ export class YoutubePayload implements AudioPayload {
     }
 
     async toResource(): Promise<AudioResource> {
-        return downloadById(this.id);
+        return downloadByUrl(this.link);
     }
 
     getTitle(): string {
@@ -333,6 +327,10 @@ class GuildQueue {
                 console.error(error),
             );
         });
+
+        player.on('debug', (params) => {
+            console.log(params);
+        })
 
         return player;
     }

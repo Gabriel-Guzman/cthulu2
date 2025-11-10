@@ -36,13 +36,14 @@ type MessageReactionAddCtx = {
 };
 
 async function buildCtx(reaction: MessageReaction, user: User) {
-    if (reaction.message.channel.type === ChannelType.DM) {
+    const channel = reaction.message.channel;
+    if (channel.type !== ChannelType.GuildText) {
         return { isDM: true };
     }
     return {
         guildUserInfo: await findOrCreate(GuildUserInfo, {
             userId: (await reaction.message.guild.members.fetch(user)).id,
-            guildId: reaction.message.channel.guild.id,
+            guildId: channel.guild.id,
         }),
         serverInfo: await findOrCreate(ServerInfo, {
             guildId: reaction.message.guild.id,

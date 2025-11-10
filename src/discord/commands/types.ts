@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommandBuilder, SlashCommandOptionsOnlyBuilder } from '@discordjs/builders';
 import { ChatInputCommandInteraction } from 'discord.js';
 import { CommandBaseMinimumPayload } from '@/discord/commands/payload';
 import {
@@ -11,7 +11,8 @@ import { BaseEventHandler } from '@/discord/eventHandlers/types';
 export interface BaseCommand extends BaseEventHandler {
     builder:
         | SlashCommandBuilder
-        | Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>;
+        | SlashCommandOptionsOnlyBuilder
+        // | Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>;
 }
 
 export interface ScoMomCommand extends BaseCommand {

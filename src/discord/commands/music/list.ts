@@ -64,7 +64,7 @@ const command: ClusterableCommand = {
 
         const chunks: YoutubePayload[][] = chunk(list, 5);
 
-        const pages: EmbedBuilder[] = await Promise.all(
+        const pages = await Promise.all(
             chunks.map(async (tracks) => {
                 const SongsDescription = tracks
                     .map((t: IAudioPayload, index) => {

@@ -1,6 +1,6 @@
 import {
     Guild,
-    GuildMember,
+    GuildMember, SendableChannels,
     TextBasedChannel,
     VoiceBasedChannel,
 } from 'discord.js';
@@ -16,7 +16,7 @@ export type CommandBaseMinimumPayload = ToIds<CommandBasePayload>;
 export type CommandBasePayload = {
     guild: Guild;
     member: GuildMember;
-    channel?: TextBasedChannel;
+    channel?: SendableChannels;
 };
 
 export type VoiceStateBaseMinimumPayload = ToIds<VoiceStateBasePayload>;
@@ -60,7 +60,7 @@ export async function hydrateCommandPayload(
 ): Promise<Partial<CommandBasePayload>> {
     let guild: Guild | undefined;
     let member: GuildMember | undefined;
-    let channel: TextBasedChannel | undefined;
+    let channel: SendableChannels | undefined;
     if (payload.guild) {
         guild = await client.guilds.fetch(payload.guild);
         if (!guild) throw new Error('Invalid guild id');
@@ -70,7 +70,7 @@ export async function hydrateCommandPayload(
         }
 
         if (payload.channel) {
-            channel = <TextBasedChannel>(
+            channel = <SendableChannels>(
                 await guild.channels.fetch(payload.channel)
             );
         }

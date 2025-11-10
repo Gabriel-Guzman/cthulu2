@@ -1,12 +1,13 @@
 import {
     Client,
-    EmbedBuilder,
+    // EmbedBuilder,
     GuildMember,
-    TextBasedChannel,
+    SendableChannels,
 } from 'discord.js';
+import { EmbedBuilder } from '@discordjs/builders';
 
 const pagination = async (
-    channel: TextBasedChannel,
+    channel: SendableChannels,
     member: GuildMember,
     pages: EmbedBuilder[],
     client: Client,

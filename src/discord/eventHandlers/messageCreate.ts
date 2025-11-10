@@ -32,7 +32,7 @@ type MessageCreateContext = {
 };
 
 async function buildCtx(message: Message) {
-    if (message.channel.type === ChannelType.DM) {
+    if (message.channel.type !== ChannelType.GuildText) {
         return {
             isDM: true,
         };

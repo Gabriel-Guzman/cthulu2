@@ -37,16 +37,17 @@
         "@": "dist/src"
     },
     "dependencies": {
-        "@discordjs/builders": "^1.4.0",
+        "@discordjs/builders": "^1.13.0",
         "@discordjs/opus": "^0.9.0",
         "@discordjs/rest": "^1.5.0",
-        "@discordjs/voice": "^0.16.0",
+        "@discordjs/voice": "^0.19.0",
         "@distube/ytdl-core": "^4.16.12",
+        "@snazzah/davey": "^0.1.7",
         "@types/node": "^18.11.18",
         "axios": "1.6.0",
         "body-parser": "^1.20.0",
-        "discord-api-types": "^0.37.28",
-        "discord.js": "^14.8.0",
+        "discord-api-types": "^0.38.31",
+        "discord.js": "^14.24.1",
         "dotenv": "^16.0.3",
         "ffmpeg-static": "^5.1.0",
         "libsodium-wrappers": "^0.7.10",
@@ -64,6 +65,6 @@
         "spotify-uri": "^3.0.3",
         "spotify-web-api-node": "^5.0.2",
         "youtube-search": "^1.1.6",
-        "youtubei.js": "^16.0.1"
+        "ytdlp-nodejs": "^2.3.5"
     }
 }
